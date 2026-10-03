@@ -3,14 +3,16 @@ import path from 'node:path'
 
 /**
  * Pre-render script for Garut Journey on Vercel and static hosting.
- * Executes TanStack Start server bundle to generate static HTML files in dist/client,
- * completely eliminating Vercel "404 NOT_FOUND" errors.
+ * Executes TanStack Start server bundle to generate static HTML files in both
+ * dist/client and dist/ root to guarantee 0% 404 NOT_FOUND errors on Vercel.
  */
 async function prerender() {
   console.log('🚀 Starting Garut Journey static page generator for Vercel...')
 
   const serverPath = path.resolve('dist/server/server.js')
   const clientDir = path.resolve('dist/client')
+  const distDir = path.resolve('dist')
+  const publicDir = path.resolve('public')
 
   if (!fs.existsSync(serverPath)) {
     console.error('❌ Error: dist/server/server.js not found. Run vite build first.')
@@ -49,14 +51,28 @@ async function prerender() {
         const html = await res.text()
 
         if (route === '/') {
+          // Write to dist/client/index.html & 404.html
           fs.writeFileSync(path.join(clientDir, 'index.html'), html, 'utf-8')
-          // Also write 404.html as SPA fallback
           fs.writeFileSync(path.join(clientDir, '404.html'), html, 'utf-8')
+
+          // Also write directly to dist/index.html & dist/404.html
+          fs.writeFileSync(path.join(distDir, 'index.html'), html, 'utf-8')
+          fs.writeFileSync(path.join(distDir, '404.html'), html, 'utf-8')
+
+          // Also write to public/index.html
+          fs.writeFileSync(path.join(publicDir, 'index.html'), html, 'utf-8')
         } else {
           const routeClean = route.replace(/^\//, '')
-          const targetDir = path.join(clientDir, routeClean)
-          fs.mkdirSync(targetDir, { recursive: true })
-          fs.writeFileSync(path.join(targetDir, 'index.html'), html, 'utf-8')
+
+          // in dist/client/
+          const targetDirClient = path.join(clientDir, routeClean)
+          fs.mkdirSync(targetDirClient, { recursive: true })
+          fs.writeFileSync(path.join(targetDirClient, 'index.html'), html, 'utf-8')
+
+          // in dist/
+          const targetDirDist = path.join(distDir, routeClean)
+          fs.mkdirSync(targetDirDist, { recursive: true })
+          fs.writeFileSync(path.join(targetDirDist, 'index.html'), html, 'utf-8')
         }
         successCount++
       } else {
@@ -67,14 +83,28 @@ async function prerender() {
     }
   }
 
-  // Fallback: If for any reason /index.html was not written, ensure it exists
+  // Also copy client assets to dist/assets if not present
+  const clientAssetsDir = path.join(clientDir, 'assets')
+  const distAssetsDir = path.join(distDir, 'assets')
+  if (fs.existsSync(clientAssetsDir) && !fs.existsSync(distAssetsDir)) {
+    fs.cpSync(clientAssetsDir, distAssetsDir, { recursive: true })
+  }
+
+  // Copy img folder to dist/img if not present
+  const clientImgDir = path.join(clientDir, 'img')
+  const distImgDir = path.join(distDir, 'img')
+  if (fs.existsSync(clientImgDir) && !fs.existsSync(distImgDir)) {
+    fs.cpSync(clientImgDir, distImgDir, { recursive: true })
+  }
+
+  // Ensure index.html exists
   const indexPath = path.join(clientDir, 'index.html')
   if (!fs.existsSync(indexPath)) {
     console.error('❌ Fatal: index.html could not be generated.')
     process.exit(1)
   }
 
-  console.log(`✅ Pre-render complete! ${successCount} routes generated in dist/client. Ready for Vercel deployment!`)
+  console.log(`✅ Pre-render complete! ${successCount} routes generated across dist/client and dist/. Ready for Vercel deployment!`)
 }
 
 prerender().catch((err) => {

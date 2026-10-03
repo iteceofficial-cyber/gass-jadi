@@ -72,7 +72,16 @@ function NotFound() {
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
-  const isAdminPage = pathname.startsWith('/admin') || pathname.startsWith('/wp-admin')
+  const isBrowserAdmin =
+    typeof window !== 'undefined' &&
+    (window.location.pathname.startsWith('/admin') ||
+      window.location.pathname.startsWith('/wp-admin') ||
+      window.location.pathname.startsWith('/login'))
+  const isAdminPage =
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/wp-admin') ||
+    pathname.startsWith('/login') ||
+    Boolean(isBrowserAdmin)
   const { lang, isRtl } = useLanguage()
 
   // Track page views for WP Admin Traffic Analytics

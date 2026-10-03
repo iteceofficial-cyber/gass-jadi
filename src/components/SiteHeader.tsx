@@ -98,6 +98,13 @@ function LanguageSelector({ solid }: { solid: boolean }) {
 
 /** Sticky navigation with dynamic language, animation and mobile drawer. */
 export function SiteHeader({ overHero = false }: { overHero?: boolean }) {
+  if (typeof window !== 'undefined') {
+    const path = window.location.pathname
+    if (path.startsWith('/admin') || path.startsWith('/wp-admin') || path.startsWith('/login')) {
+      return null
+    }
+  }
+
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
   const { lang, switchLanguage, supportedLanguages, t } = useLanguage()

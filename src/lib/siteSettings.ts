@@ -18,6 +18,10 @@ export interface SiteSettings {
   whatsappDigits: string
   email: string
   mapsQuery: string
+  // Logo Customization
+  customLogoUrl?: string
+  logoType?: 'default' | 'custom'
+  logoHeight?: number
   // Social Links
   socialInstagram: string
   socialTikTok: string
@@ -70,6 +74,9 @@ export const initialSiteSettings: SiteSettings = {
   whatsappDigits: defaultSite.whatsappDigits,
   email: defaultSite.email,
   mapsQuery: defaultSite.mapsQuery,
+  customLogoUrl: '',
+  logoType: 'default',
+  logoHeight: 36,
   socialInstagram: defaultSite.socials.instagram,
   socialTikTok: defaultSite.socials.tiktok,
   socialFacebook: defaultSite.socials.facebook,
