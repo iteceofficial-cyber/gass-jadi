@@ -1,8 +1,9 @@
-import { Check, Clock, Edit3, Plus, RotateCcw, Sparkles, Star, Trash2, Users } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
+import { Check, Clock, Edit3, Plus, RotateCcw, Sparkles, Star, Tent, Trash2, Upload, Users } from 'lucide-react'
+import { useState, type ChangeEvent, type FormEvent } from 'react'
 import { Img } from '@/components/Img'
 import { type CityTour, type TourPackage } from '@/data/tours'
 import { useTourPrices } from '@/lib/destinationsStorage'
+import { readAndCompressImage } from '@/lib/img'
 import {
   deleteCityTour,
   deleteTourPackage,
@@ -56,11 +57,13 @@ export function ToursManager({ onNotify }: { onNotify: (msg: string) => void }) 
   // --- City Tour Form State ---
   const [editingTourId, setEditingTourId] = useState<string | null>(null)
   const [ctName, setCtName] = useState('')
+  const [ctCategory, setCtCategory] = useState<'city' | 'trekking-camping'>('city')
   const [ctDuration, setCtDuration] = useState('Full Day (08.00 – 18.00 WIB)')
   const [ctSummary, setCtSummary] = useState('')
-  const [ctPrice, setCtPrice] = useState('Rp 350.000 / orang')
+  const [ctPrice, setCtPrice] = useState('Mulai dari Rp 350.000 / orang')
   const [ctNumericPrice, setCtNumericPrice] = useState<number>(350000)
   const [ctImage, setCtImage] = useState('citysquare.png')
+  const [ctUploading, setCtUploading] = useState(false)
   const [ctFocus, setCtFocus] = useState('City landmarks, Culinary, Souvenirs')
   const [ctItineraryText, setCtItineraryText] = useState(
     '08:00 WIB | Penjemputan di Stasiun Garut / Hotel\n10:00 WIB | Eksplorasi Destinasi Utama\n12:30 WIB | Makan Siang Kuliner Khas Sunda\n15:30 WIB | Belanja Oleh-oleh & Kerajinan Kulit\n17:30 WIB | Pengantaran Kembali',
@@ -85,9 +88,10 @@ export function ToursManager({ onNotify }: { onNotify: (msg: string) => void }) 
   const resetCtForm = () => {
     setEditingTourId(null)
     setCtName('')
+    setCtCategory('city')
     setCtDuration('Full Day (08.00 – 18.00 WIB)')
     setCtSummary('')
-    setCtPrice('Rp 350.000 / orang')
+    setCtPrice('Mulai dari Rp 350.000 / orang')
     setCtNumericPrice(350000)
     setCtImage('citysquare.png')
     setCtFocus('City landmarks, Culinary, Souvenirs')
@@ -96,9 +100,25 @@ export function ToursManager({ onNotify }: { onNotify: (msg: string) => void }) 
     )
   }
 
+  const handleCtFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setCtUploading(true)
+    try {
+      const dataUrl = await readAndCompressImage(file)
+      setCtImage(dataUrl)
+      onNotify(`Gambar "${file.name}" berhasil di-upload untuk Paket Tour!`)
+    } catch {
+      onNotify('Gagal memproses file gambar.')
+    } finally {
+      setCtUploading(false)
+    }
+  }
+
   const handleEditCityTour = (t: CityTour) => {
     setEditingTourId(t.id)
     setCtName(t.name)
+    setCtCategory(t.category || 'city')
     setCtDuration(t.duration)
     setCtSummary(t.summary)
     setCtPrice(t.price)
@@ -129,6 +149,7 @@ export function ToursManager({ onNotify }: { onNotify: (msg: string) => void }) 
     const newTour: CityTour = {
       id,
       name: ctName.trim(),
+      category: ctCategory,
       duration: ctDuration.trim() || 'Full Day',
       summary: ctSummary.trim() || `Paket perjalanan seru menjelajahi ${ctName.trim()} bersama pemandu lokal Garut Journey.`,
       focus: ctFocus
@@ -136,7 +157,7 @@ export function ToursManager({ onNotify }: { onNotify: (msg: string) => void }) 
         .map((s) => s.trim())
         .filter(Boolean),
       itinerary: itinerary.length > 0 ? itinerary : [{ time: '08:00 WIB', title: 'Mulai Perjalanan Tour' }],
-      price: ctPrice.trim() || `Rp ${ctNumericPrice.toLocaleString('id-ID')} / orang`,
+      price: ctPrice.trim() || `Mulai dari Rp ${ctNumericPrice.toLocaleString('id-ID')} / orang`,
       image: ctImage.trim() || 'citysquare.png',
     }
 
@@ -322,16 +343,37 @@ export function ToursManager({ onNotify }: { onNotify: (msg: string) => void }) 
               <div className="grid gap-5 sm:grid-cols-2">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-ink/70">
-                    Nama Paket City Tour *
+                    Nama Paket Tour *
                   </label>
                   <input
                     type="text"
                     required
                     value={ctName}
                     onChange={(e) => setCtName(e.target.value)}
-                    placeholder="Contoh: Garut Southern Beach & Sunset Tour"
+                    placeholder="Contoh: Wisata Trekking & Camping Papandayan"
                     className="mt-1.5 w-full rounded-xl border border-ink/20 px-4 py-2.5 text-sm font-semibold text-ink focus:border-forest focus:outline-none"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-ink/70">
+                    Kategori Menu Paket Tour *
+                  </label>
+                  <select
+                    value={ctCategory}
+                    onChange={(e) => {
+                      const val = e.target.value as 'city' | 'trekking-camping'
+                      setCtCategory(val)
+                      if (val === 'trekking-camping' && ctImage === 'citysquare.png') {
+                        setCtImage('hiking.png')
+                        setCtFocus('Trekking, Camping, Sunrise, Adventure')
+                      }
+                    }}
+                    className="mt-1.5 w-full rounded-xl border border-ink/20 px-4 py-2.5 text-sm font-semibold text-forest focus:border-forest focus:outline-none"
+                  >
+                    <option value="city">City & Heritage Tour</option>
+                    <option value="trekking-camping">Wisata Trekking & Camping</option>
+                  </select>
                 </div>
 
                 <div>
@@ -343,7 +385,7 @@ export function ToursManager({ onNotify }: { onNotify: (msg: string) => void }) 
                     required
                     value={ctDuration}
                     onChange={(e) => setCtDuration(e.target.value)}
-                    placeholder="Contoh: Full Day · 08.00 – 18.00 WIB"
+                    placeholder="Contoh: 2 Days 1 Night · Trekking & Camp"
                     className="mt-1.5 w-full rounded-xl border border-ink/20 px-4 py-2.5 text-sm text-ink focus:border-forest focus:outline-none"
                   />
                 </div>
@@ -357,7 +399,7 @@ export function ToursManager({ onNotify }: { onNotify: (msg: string) => void }) 
                     required
                     value={ctPrice}
                     onChange={(e) => setCtPrice(e.target.value)}
-                    placeholder="Contoh: Rp 350.000 / orang"
+                    placeholder="Contoh: Mulai dari Rp 480.000 / orang"
                     className="mt-1.5 w-full rounded-xl border border-ink/20 px-4 py-2.5 text-sm font-semibold text-ember focus:border-forest focus:outline-none"
                   />
                 </div>
@@ -378,19 +420,26 @@ export function ToursManager({ onNotify }: { onNotify: (msg: string) => void }) 
 
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-ink/70">
-                    Gambar Sampul Tour
+                    Gambar Sampul Tour (Pilih atau Upload)
                   </label>
-                  <select
-                    value={ctImage}
-                    onChange={(e) => setCtImage(e.target.value)}
-                    className="mt-1.5 w-full rounded-xl border border-ink/20 px-4 py-2.5 text-sm text-ink focus:border-forest focus:outline-none"
-                  >
-                    {AVAILABLE_IMAGES.map((img) => (
-                      <option key={img.file} value={img.file}>
-                        {img.label} ({img.file})
-                      </option>
-                    ))}
-                  </select>
+                  <div className="mt-1.5 flex gap-2">
+                    <select
+                      value={ctImage.startsWith('data:') ? 'hiking.png' : ctImage}
+                      onChange={(e) => setCtImage(e.target.value)}
+                      className="flex-1 rounded-xl border border-ink/20 px-3 py-2.5 text-sm text-ink focus:border-forest focus:outline-none"
+                    >
+                      {AVAILABLE_IMAGES.map((img) => (
+                        <option key={img.file} value={img.file}>
+                          {img.label} ({img.file})
+                        </option>
+                      ))}
+                    </select>
+                    <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-ember px-3.5 py-2.5 text-xs font-bold text-white hover:bg-ember-600 shrink-0">
+                      <Upload className="h-3.5 w-3.5" />
+                      <span>{ctUploading ? '...' : 'Upload'}</span>
+                      <input type="file" accept="image/*" onChange={handleCtFileUpload} className="hidden" />
+                    </label>
+                  </div>
                 </div>
 
                 <div>

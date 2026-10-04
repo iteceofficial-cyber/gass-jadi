@@ -1,9 +1,7 @@
-import { Check, Edit3, MessageSquarePlus, Quote, Star, Trash2, X } from 'lucide-react'
+import { Check, MessageSquarePlus, Quote, Star, X } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { Reveal, SectionHeading } from '@/components/Reveal'
-import { type Testimonial } from '@/data/testimonials'
 import {
-  deleteTestimonial,
   getInitials,
   getRandomTone,
   upsertTestimonial,
@@ -19,7 +17,6 @@ export function Testimonials() {
   const packages = useTourPackages()
 
   const [isFormOpen, setIsFormOpen] = useState(false)
-  const [editingId, setEditingId] = useState<string | null>(null)
   const [name, setName] = useState('')
   const [from, setFrom] = useState('')
   const [tourName, setTourName] = useState('')
@@ -31,12 +28,12 @@ export function Testimonials() {
     new Set([
       ...cityTours.map((ct) => ct.name),
       ...packages.map((p) => p.name),
+      'Wisata Trekking & Camping Garut',
       'Custom Private Tour Garut',
     ]),
   )
 
   const openNewForm = () => {
-    setEditingId(null)
     setName('')
     setFrom('')
     setTourName(tourChoices[0] || 'Garut One-Day City Tour')
@@ -45,29 +42,11 @@ export function Testimonials() {
     setIsFormOpen(true)
   }
 
-  const openEditForm = (item: Testimonial, idx: number) => {
-    const itemId = item.id || `rev-${idx}`
-    setEditingId(itemId)
-    setName(item.name)
-    setFrom(item.from)
-    setTourName(item.tourName || tourChoices[0] || 'Garut One-Day City Tour')
-    setRating(item.rating)
-    setReview(item.review)
-    setIsFormOpen(true)
-  }
-
-  const handleDelete = (item: Testimonial, idx: number) => {
-    const itemId = item.id || `rev-${idx}`
-    deleteTestimonial(itemId)
-    setSubmittedNotice('Ulasan berhasil dihapus.')
-    setTimeout(() => setSubmittedNotice(null), 3500)
-  }
-
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
     if (!name.trim() || !review.trim()) return
 
-    const id = editingId || `rev-${Date.now()}`
+    const id = `rev-${Date.now()}`
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
     const now = new Date()
     const formattedDate = `${monthNames[now.getMonth()]} ${now.getFullYear()}`
@@ -85,8 +64,7 @@ export function Testimonials() {
     })
 
     setIsFormOpen(false)
-    setEditingId(null)
-    setSubmittedNotice(editingId ? 'Ulasan berhasil diperbarui!' : 'Terima kasih! Ulasan Anda telah ditampilkan.')
+    setSubmittedNotice('Terima kasih! Ulasan Anda telah berhasil dikirim dan ditampilkan.')
     setTimeout(() => setSubmittedNotice(null), 4000)
   }
 
@@ -127,16 +105,16 @@ export function Testimonials() {
           </div>
         </div>
 
-        {/* Interactive Add / Edit Client Review Form */}
+        {/* Form Tambah Ulasan Klien Baru */}
         {isFormOpen && (
           <div className="mt-10 rounded-[2rem] bg-cream p-6 sm:p-8 shadow-lift ring-1 ring-ink/10 animate-fade-in">
             <div className="flex items-center justify-between border-b border-ink/10 pb-4">
               <div>
                 <span className="text-xs font-bold uppercase tracking-widest text-ember">
-                  {editingId ? 'Edit Ulasan Klien' : 'Bagikan Pengalaman Anda'}
+                  Bagikan Pengalaman Anda
                 </span>
                 <h3 className="font-display mt-1 text-2xl text-ink">
-                  {editingId ? 'Perbarui Ulasan Perjalanan' : 'Tulis Ulasan Bersama Garut Journey'}
+                  Tulis Ulasan Bersama Garut Journey
                 </h3>
               </div>
               <button
@@ -236,7 +214,7 @@ export function Testimonials() {
                   className="inline-flex items-center gap-2 rounded-full bg-ember px-6 py-3 text-sm font-semibold text-white shadow-soft transition hover:bg-ember-600"
                 >
                   <Check className="h-4 w-4" />
-                  <span>{editingId ? 'Simpan Perubahan' : 'Kirim Ulasan'}</span>
+                  <span>Kirim Ulasan</span>
                 </button>
               </div>
             </form>
@@ -249,46 +227,25 @@ export function Testimonials() {
             return (
               <Reveal as="li" key={itemKey} delay={(i % 4) * 80}>
                 <figure
-                  className={`group relative flex h-full flex-col rounded-[1.75rem] p-7 transition duration-300 hover:shadow-soft ${
+                  className={`relative flex h-full flex-col rounded-[1.75rem] p-7 transition duration-300 hover:shadow-soft ${
                     i % 2 ? 'bg-cream lg:translate-y-6' : 'bg-cream-200/70'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <Quote className="h-8 w-8 text-ember shrink-0" aria-hidden="true" />
-                    <div className="flex items-center gap-1 opacity-80 transition group-hover:opacity-100">
-                      <button
-                        type="button"
-                        onClick={() => openEditForm(item, i)}
-                        title="Edit ulasan ini"
-                        className="inline-flex items-center gap-1 rounded-full bg-white/80 px-2.5 py-1 text-[0.7rem] font-semibold text-ink/70 shadow-2xs transition hover:bg-forest hover:text-cream"
-                      >
-                        <Edit3 className="h-3 w-3" />
-                        <span>Edit</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(item, i)}
-                        title="Hapus ulasan ini"
-                        className="inline-flex items-center rounded-full bg-white/80 p-1.5 text-ink/50 shadow-2xs transition hover:bg-red-600 hover:text-white"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 flex items-center justify-between gap-2">
-                    <div className="flex gap-0.5" role="img" aria-label={`Rated ${item.rating} out of 5`}>
-                      {Array.from({ length: 5 }).map((_, s) => (
-                        <Star
-                          key={s}
-                          className={`h-4 w-4 ${s < item.rating ? 'fill-ember text-ember' : 'text-ink/20'}`}
-                          aria-hidden="true"
-                        />
-                      ))}
-                    </div>
                     {item.date && (
                       <span className="text-[0.7rem] font-medium text-ink/45">{item.date}</span>
                     )}
+                  </div>
+
+                  <div className="mt-4 flex gap-0.5" role="img" aria-label={`Rated ${item.rating} out of 5`}>
+                    {Array.from({ length: 5 }).map((_, s) => (
+                      <Star
+                        key={s}
+                        className={`h-4 w-4 ${s < item.rating ? 'fill-ember text-ember' : 'text-ink/20'}`}
+                        aria-hidden="true"
+                      />
+                    ))}
                   </div>
 
                   {item.tourName && (

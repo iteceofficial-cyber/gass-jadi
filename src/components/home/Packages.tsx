@@ -6,7 +6,7 @@ import { useTourPackages } from '@/lib/toursStorage'
 import { Chip } from './Destinations'
 import { useLanguage } from '@/lib/i18n'
 
-const styleFilters = ['All styles', 'Nature', 'Culinary', 'Culture', 'Family', 'Adventure', 'Romantic'] as const
+const styleFilters = ['All styles', 'Trekking & Camping', 'Nature', 'Culinary', 'Culture', 'Family', 'Adventure', 'Romantic'] as const
 
 export function Packages() {
   const [days, setDays] = useState<number>(0)

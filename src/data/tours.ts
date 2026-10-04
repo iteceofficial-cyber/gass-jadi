@@ -15,6 +15,7 @@ export interface CityTour {
   summary: string
   focus: string[]
   price: string
+  category?: 'city' | 'trekking-camping'
   itinerary: ItineraryStop[]
 }
 
@@ -26,7 +27,8 @@ export const cityTours: CityTour[] = [
     image: 'citysquare.png',
     summary: 'The best of Garut in a single, well-paced day — city sights, heritage, local lunch and souvenirs.',
     focus: ['City', 'Heritage', 'Culinary', 'Souvenirs'],
-    price: 'Starting from Rp XXX / person',
+    price: 'Mulai dari Rp 350.000 / orang',
+    category: 'city',
     itinerary: [
       { time: '08:00', title: 'Meeting point' },
       { time: '09:00', title: 'City sightseeing' },
@@ -44,7 +46,8 @@ export const cityTours: CityTour[] = [
     image: 'sampireun.png',
     summary: 'Slow down and go deeper: highland nature, Sundanese food, culture, local life and a sunrise to remember.',
     focus: ['Nature', 'Culinary', 'Culture', 'Local experiences', 'Souvenirs', 'Sunrise & sunset'],
-    price: 'Starting from Rp XXX / person',
+    price: 'Mulai dari Rp 850.000 / orang',
+    category: 'city',
     itinerary: [
       { time: 'Day 1 · Morning', title: 'Arrival & heritage visit' },
       { time: 'Day 1 · Afternoon', title: 'Sundanese lunch & local craft village' },
@@ -52,6 +55,44 @@ export const cityTours: CityTour[] = [
       { time: 'Day 2 · Dawn', title: 'Highland sunrise' },
       { time: 'Day 2 · Morning', title: 'Nature walk & breakfast' },
       { time: 'Day 2 · Afternoon', title: 'Souvenir shopping & return' },
+    ],
+  },
+  {
+    id: 'papandayan-trekking-camping',
+    name: 'Wisata Trekking & Camping — Gunung Papandayan',
+    duration: '2 Days 1 Night · Trekking & Camp',
+    image: 'hiking.png',
+    summary: 'Petualangan trekking menembus kawah vulkanik aktif, Hutan Mati yang ikonik, dan berkemah malam di Pondok Saladah lengkap dengan peralatan tenda & api unggun.',
+    focus: ['Trekking', 'Camping', 'Sunrise', 'Hutan Mati', 'Padang Edelweiss'],
+    price: 'Mulai dari Rp 480.000 / orang',
+    category: 'trekking-camping',
+    itinerary: [
+      { time: 'Hari 1 · 08:00', title: 'Titik kumpul di Stasiun Garut & perjalanan menuju Basecamp Camp David Papandayan' },
+      { time: 'Hari 1 · 10:00', title: 'Mulai trekking santai melewati Kawah Belerang & Kawah Baru' },
+      { time: 'Hari 1 · 13:00', title: 'Tiba di area Camping Ground Pondok Saladah, makan siang & pendirian tenda' },
+      { time: 'Hari 1 · 16:30', title: 'Eksplorasi sore di Hutan Mati & menikmati senja pegunungan' },
+      { time: 'Hari 1 · 19:30', title: 'Makan malam hangat di camp, api unggun & minuman tradisional' },
+      { time: 'Hari 2 · 05:00', title: 'Sunrise trekking di Tebing Gober Hoet & Padang Edelweiss Tegal Alun' },
+      { time: 'Hari 2 · 09:00', title: 'Sarapan di tenda, turun ke basecamp & relaksasi kolam air hangat alami' },
+      { time: 'Hari 2 · 15:00', title: 'Belanja oleh-oleh khas Garut & pengantaran kembali ke titik kumpul' },
+    ],
+  },
+  {
+    id: 'guntur-cikuray-trekking-camp',
+    name: 'Sunrise Trekking & Highland Camping — Gunung Guntur / Talaga Bodas',
+    duration: '2 Days 1 Night · Adventure Camp',
+    image: 'papandayan.png',
+    summary: 'Rasakan sensasi berkemah di atas awan dengan panorama sabana Gunung Guntur atau ketenangan tepi kawah hijau toska Talaga Bodas.',
+    focus: ['Trekking', 'Sabana Camping', 'Golden Sunrise', 'Hot Springs'],
+    price: 'Mulai dari Rp 520.000 / orang',
+    category: 'trekking-camping',
+    itinerary: [
+      { time: 'Hari 1 · 09:00', title: 'Penjemputan peserta & briefing perlengkapan trekking dan camping' },
+      { time: 'Hari 1 · 13:00', title: 'Trekking menuju Pos 3 / Area Camp Sabana dengan pemandu gunung resmi' },
+      { time: 'Hari 1 · 17:00', title: 'Menikmati golden sunset di atas lanskap kota Garut & mendirikan camp' },
+      { time: 'Hari 1 · 19:30', title: 'Makan malam hangat & malam keakraban di bawah bintang' },
+      { time: 'Hari 2 · 04:30', title: 'Summit attack mengejar matahari terbit di puncak' },
+      { time: 'Hari 2 · 10:00', title: 'Turun gunung & berendam air panas belerang di Cipanas Garut' },
     ],
   },
 ]
@@ -100,6 +141,19 @@ export const packages: TourPackage[] = [
     groupSize: 'Group size to be confirmed',
     price: 'Starting from Rp XXX / person',
     featured: true,
+  },
+  {
+    id: 'trekking-camping-adventure',
+    name: 'Trekking & Camping',
+    tagline: 'Petualangan mendaki gunung & berkemah di alam terbuka Garut.',
+    duration: '2 Days 1 Night',
+    durationDays: 2,
+    styles: ['Trekking & Camping', 'Adventure', 'Nature'],
+    destinations: ['Mount Papandayan', 'Pondok Saladah Camp', 'Hutan Mati', 'Darajat / Cipanas Hot Springs'],
+    activities: ['Guided volcano trekking', 'Overnight tent camping', 'Campfire & warm mountain dinner', 'Sunrise view & hot-spring soak'],
+    included: ['Pemandu gunung berlisensi & porter grup', 'Tenda dome, matras & sleeping bag bersih', 'Makan 3x + kopi/teh hangat di camp', 'Tiket masuk & izin berkemah resmi'],
+    groupSize: '2–12 peserta (private atau small group)',
+    price: 'Mulai dari Rp 480.000 / orang',
   },
   {
     id: 'premium-experience',

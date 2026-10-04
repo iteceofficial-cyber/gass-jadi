@@ -1,5 +1,17 @@
-import { Check, Compass, Edit3, Image as ImageIcon, Plus, RotateCcw, Sparkles, Trash2, UtensilsCrossed } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
+import {
+  Check,
+  Compass,
+  Edit3,
+  Image as ImageIcon,
+  Link2,
+  Plus,
+  RotateCcw,
+  Sparkles,
+  Trash2,
+  Upload,
+  UtensilsCrossed,
+} from 'lucide-react'
+import { useState, type ChangeEvent, type FormEvent } from 'react'
 import { Img } from '@/components/Img'
 import { type Dish } from '@/data/culinary'
 import { type Experience } from '@/data/experiences'
@@ -19,6 +31,7 @@ import {
   useGallery,
 } from '@/lib/contentStorage'
 import { useDestinations } from '@/lib/destinationsStorage'
+import { readAndCompressImage } from '@/lib/img'
 import { useSiteSettings } from '@/lib/siteSettings'
 import { useTourPackages } from '@/lib/toursStorage'
 
@@ -64,7 +77,7 @@ export function SectionsManager({ onNotify }: { onNotify: (msg: string) => void 
   const packages = useTourPackages()
   const { settings, saveSiteSettings } = useSiteSettings()
 
-  const [subTab, setSubTab] = useState<'culinary' | 'gallery' | 'experiences' | 'banners'>('culinary')
+  const [subTab, setSubTab] = useState<'gallery' | 'culinary' | 'experiences' | 'banners'>('gallery')
 
   // --- 1. Culinary Form State ---
   const [editingDishId, setEditingDishId] = useState<string | null>(null)
@@ -73,6 +86,7 @@ export function SectionsManager({ onNotify }: { onNotify: (msg: string) => void 
   const [dishLocation, setDishLocation] = useState('')
   const [dishImage, setDishImage] = useState('basoaci.png')
   const [dishDesc, setDishDesc] = useState('')
+  const [dishUploading, setDishUploading] = useState(false)
 
   const resetDishForm = () => {
     setEditingDishId(null)
@@ -92,6 +106,21 @@ export function SectionsManager({ onNotify }: { onNotify: (msg: string) => void 
     setDishDesc(d.description)
   }
 
+  const handleDishFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setDishUploading(true)
+    try {
+      const dataUrl = await readAndCompressImage(file)
+      setDishImage(dataUrl)
+      onNotify(`Gambar "${file.name}" berhasil di-upload untuk kuliner!`)
+    } catch {
+      onNotify('Gagal memproses file gambar.')
+    } finally {
+      setDishUploading(false)
+    }
+  }
+
   const handleSaveDish = (e: FormEvent) => {
     e.preventDefault()
     if (!dishName.trim()) return
@@ -108,11 +137,14 @@ export function SectionsManager({ onNotify }: { onNotify: (msg: string) => void 
     resetDishForm()
   }
 
-  // --- 2. Gallery Form State ---
+  // --- 2. Gallery Form State (with Upload Gambar) ---
   const [editingGalId, setEditingGalId] = useState<string | null>(null)
   const [galTitle, setGalTitle] = useState('')
   const [galCategory, setGalCategory] = useState<GalleryCategory>('Nature')
+  const [galImageMode, setGalImageMode] = useState<'upload' | 'preset' | 'url'>('upload')
   const [galImage, setGalImage] = useState('hero.png')
+  const [galUploadedName, setGalUploadedName] = useState('')
+  const [galUploading, setGalUploading] = useState(false)
   const [galDesc, setGalDesc] = useState('')
   const [galTall, setGalTall] = useState(false)
 
@@ -121,6 +153,7 @@ export function SectionsManager({ onNotify }: { onNotify: (msg: string) => void 
     setGalTitle('')
     setGalCategory('Nature')
     setGalImage('hero.png')
+    setGalUploadedName('')
     setGalDesc('')
     setGalTall(false)
   }
@@ -130,8 +163,36 @@ export function SectionsManager({ onNotify }: { onNotify: (msg: string) => void 
     setGalTitle(g.title)
     setGalCategory(g.category)
     setGalImage(g.image)
+    if (g.image.startsWith('data:')) {
+      setGalImageMode('upload')
+      setGalUploadedName('Gambar Hasil Upload')
+    } else if (g.image.startsWith('http')) {
+      setGalImageMode('url')
+    } else {
+      setGalImageMode('preset')
+    }
     setGalDesc(g.description)
     setGalTall(Boolean(g.tall))
+  }
+
+  const handleGalleryFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setGalUploading(true)
+    try {
+      const dataUrl = await readAndCompressImage(file, 1280, 0.84)
+      setGalImage(dataUrl)
+      setGalUploadedName(file.name)
+      if (!galTitle.trim()) {
+        const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]+/g, ' ')
+        setGalTitle(cleanName.charAt(0).toUpperCase() + cleanName.slice(1))
+      }
+      onNotify(`Foto "${file.name}" siap ditambahkan ke Galeri!`)
+    } catch {
+      onNotify('Gagal membaca file gambar.')
+    } finally {
+      setGalUploading(false)
+    }
   }
 
   const handleSaveGal = (e: FormEvent) => {
@@ -146,7 +207,11 @@ export function SectionsManager({ onNotify }: { onNotify: (msg: string) => void 
       description: galDesc.trim() || galTitle.trim(),
       tall: galTall,
     })
-    onNotify(editingGalId ? `Foto galeri "${galTitle}" diperbarui!` : `Foto "${galTitle}" ditambahkan ke galeri!`)
+    onNotify(
+      editingGalId
+        ? `Foto galeri "${galTitle}" berhasil diperbarui!`
+        : `Foto baru "${galTitle}" berhasil ditambahkan ke Galeri Website!`,
+    )
     resetGalForm()
   }
 
@@ -231,6 +296,17 @@ export function SectionsManager({ onNotify }: { onNotify: (msg: string) => void 
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
+            onClick={() => setSubTab('gallery')}
+            className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wider transition ${
+              subTab === 'gallery' ? 'bg-forest text-white shadow-sm' : 'bg-cream text-ink/70 hover:bg-ink/10'
+            }`}
+          >
+            <Upload className="h-3.5 w-3.5" />
+            <span>Upload & Galeri Foto ({gallery.length})</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setSubTab('culinary')}
             className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wider transition ${
               subTab === 'culinary' ? 'bg-forest text-white shadow-sm' : 'bg-cream text-ink/70 hover:bg-ink/10'
@@ -238,17 +314,6 @@ export function SectionsManager({ onNotify }: { onNotify: (msg: string) => void 
           >
             <UtensilsCrossed className="h-3.5 w-3.5" />
             <span>Kuliner ({dishes.length})</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setSubTab('gallery')}
-            className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wider transition ${
-              subTab === 'gallery' ? 'bg-forest text-white shadow-sm' : 'bg-cream text-ink/70 hover:bg-ink/10'
-            }`}
-          >
-            <ImageIcon className="h-3.5 w-3.5" />
-            <span>Galeri Foto ({gallery.length})</span>
           </button>
 
           <button
@@ -300,7 +365,303 @@ export function SectionsManager({ onNotify }: { onNotify: (msg: string) => void 
         )}
       </div>
 
-      {/* 1. CULINARY MANAGER */}
+      {/* 1. GALLERY MANAGER WITH IMAGE UPLOAD */}
+      {subTab === 'gallery' && (
+        <div className="space-y-8">
+          <div className="rounded-3xl bg-white p-6 sm:p-8 shadow-soft border border-ink/5 space-y-6">
+            <div className="border-b border-ink/10 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-widest text-ember">
+                  Upload & Kelola Galeri Visual Garut (#gallery)
+                </span>
+                <h2 className="font-display text-2xl font-semibold text-forest mt-1">
+                  {editingGalId ? `Edit Foto Galeri: ${galTitle}` : 'Upload & Tambah Foto Galeri Baru'}
+                </h2>
+                <p className="text-xs text-ink/60 mt-1">
+                  Upload foto baru langsung dari perangkat Anda (HP/Laptop), gunakan URL gambar, atau pilih dari koleksi foto Garut.
+                </p>
+              </div>
+              {editingGalId && (
+                <button
+                  type="button"
+                  onClick={resetGalForm}
+                  className="self-start rounded-full bg-ink/5 px-4 py-2 text-xs font-semibold text-ink/70 hover:bg-ink/10"
+                >
+                  + Upload Foto Baru
+                </button>
+              )}
+            </div>
+
+            <form onSubmit={handleSaveGal} className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
+              <div className="space-y-5">
+                {/* Mode Sumber Gambar */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-ink/70 mb-2">
+                    Sumber Gambar Galeri *
+                  </label>
+                  <div className="grid grid-cols-3 gap-2 rounded-2xl bg-cream p-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setGalImageMode('upload')}
+                      className={`flex items-center justify-center gap-1.5 rounded-xl py-2.5 px-3 text-xs font-bold transition ${
+                        galImageMode === 'upload'
+                          ? 'bg-forest text-white shadow-sm'
+                          : 'text-ink/70 hover:text-ink'
+                      }`}
+                    >
+                      <Upload className="h-3.5 w-3.5" />
+                      <span>Upload File</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setGalImageMode('preset')}
+                      className={`flex items-center justify-center gap-1.5 rounded-xl py-2.5 px-3 text-xs font-bold transition ${
+                        galImageMode === 'preset'
+                          ? 'bg-forest text-white shadow-sm'
+                          : 'text-ink/70 hover:text-ink'
+                      }`}
+                    >
+                      <ImageIcon className="h-3.5 w-3.5" />
+                      <span>Koleksi Web</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setGalImageMode('url')}
+                      className={`flex items-center justify-center gap-1.5 rounded-xl py-2.5 px-3 text-xs font-bold transition ${
+                        galImageMode === 'url'
+                          ? 'bg-forest text-white shadow-sm'
+                          : 'text-ink/70 hover:text-ink'
+                      }`}
+                    >
+                      <Link2 className="h-3.5 w-3.5" />
+                      <span>URL Gambar</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Input berdasarkan Mode */}
+                {galImageMode === 'upload' && (
+                  <div className="rounded-2xl border-2 border-dashed border-forest/30 bg-forest/[0.03] p-5 text-center space-y-3">
+                    <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-forest/10 text-forest">
+                      <Upload className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-ink">
+                        {galUploading
+                          ? 'Memproses & mengoptimalkan gambar...'
+                          : galUploadedName
+                          ? `File terpilih: ${galUploadedName}`
+                          : 'Pilih file foto dari perangkat Anda'}
+                      </p>
+                      <p className="text-xs text-ink/55 mt-0.5">
+                        Mendukung format JPG, PNG, WebP (Otomatis dikompresi agar cepat dimuat)
+                      </p>
+                    </div>
+                    <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-ember px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow hover:bg-ember-600 transition">
+                      <Upload className="h-3.5 w-3.5" />
+                      <span>Pilih File Gambar</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleGalleryFileUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                )}
+
+                {galImageMode === 'preset' && (
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-ink/70">
+                      Pilih dari Koleksi Foto Garut
+                    </label>
+                    <select
+                      value={galImage.startsWith('data:') || galImage.startsWith('http') ? 'hero.png' : galImage}
+                      onChange={(e) => setGalImage(e.target.value)}
+                      className="mt-1.5 w-full rounded-xl border border-ink/20 px-4 py-2.5 text-sm text-ink"
+                    >
+                      {AVAILABLE_IMAGES.map((img) => (
+                        <option key={img.file} value={img.file}>
+                          {img.label} ({img.file})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {galImageMode === 'url' && (
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-ink/70">
+                      Masukkan URL Gambar Eksternal
+                    </label>
+                    <input
+                      type="url"
+                      value={galImage.startsWith('http') ? galImage : ''}
+                      onChange={(e) => setGalImage(e.target.value)}
+                      placeholder="https://images.unsplash.com/..."
+                      className="mt-1.5 w-full rounded-xl border border-ink/20 px-4 py-2.5 text-sm text-ink"
+                    />
+                  </div>
+                )}
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-ink/70">Judul Foto *</label>
+                    <input
+                      type="text"
+                      required
+                      value={galTitle}
+                      onChange={(e) => setGalTitle(e.target.value)}
+                      placeholder="Contoh: Camping Ceria di Pondok Saladah"
+                      className="mt-1.5 w-full rounded-xl border border-ink/20 px-4 py-2.5 text-sm font-semibold text-ink"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-ink/70">Kategori Filter</label>
+                    <select
+                      value={galCategory}
+                      onChange={(e) => setGalCategory(e.target.value as GalleryCategory)}
+                      className="mt-1.5 w-full rounded-xl border border-ink/20 px-4 py-2.5 text-sm text-ink"
+                    >
+                      {GALLERY_CATEGORIES.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-ink/70">
+                    Caption / Deskripsi Foto *
+                  </label>
+                  <textarea
+                    rows={2}
+                    required
+                    value={galDesc}
+                    onChange={(e) => setGalDesc(e.target.value)}
+                    placeholder="Tuliskan keterangan singkat suasana foto ini..."
+                    className="mt-1.5 w-full rounded-xl border border-ink/20 p-3 text-sm text-ink"
+                  />
+                </div>
+
+                <label className="inline-flex items-center gap-2.5 cursor-pointer rounded-xl bg-cream/60 px-4 py-2.5 border border-ink/10 w-full">
+                  <input
+                    type="checkbox"
+                    checked={galTall}
+                    onChange={(e) => setGalTall(e.target.checked)}
+                    className="rounded text-forest h-4 w-4"
+                  />
+                  <span className="text-xs font-semibold text-ink">
+                    Tampilkan dalam Rasio Vertikal / Portrait (Cocok untuk foto berdiri)
+                  </span>
+                </label>
+
+                <div className="flex gap-3 pt-1">
+                  <button
+                    type="submit"
+                    disabled={galUploading}
+                    className="inline-flex items-center gap-2 rounded-full bg-forest px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow hover:bg-forest-700 disabled:opacity-50"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>{editingGalId ? 'Simpan Perubahan Foto' : 'Tambahkan Gambar ke Galeri'}</span>
+                  </button>
+                  {editingGalId && (
+                    <button
+                      type="button"
+                      onClick={resetGalForm}
+                      className="rounded-full border border-ink/20 px-5 py-3 text-xs font-semibold text-ink/70"
+                    >
+                      Batal
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Pratinjau Gambar Live */}
+              <div className="flex flex-col justify-between rounded-2xl border border-ink/10 bg-cream/40 p-5 space-y-4">
+                <div>
+                  <span className="text-[0.7rem] font-bold uppercase tracking-widest text-ink/50 block mb-2">
+                    Pratinjau Gambar di Galeri
+                  </span>
+                  <div
+                    className={`relative mx-auto overflow-hidden rounded-2xl bg-ink/10 shadow-soft ${
+                      galTall ? 'aspect-[3/4] max-w-[260px]' : 'aspect-[4/3] w-full'
+                    }`}
+                  >
+                    <Img file={galImage} alt={galTitle || 'Preview'} className="h-full w-full object-cover" />
+                    <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-ink/85 via-ink/20 to-transparent p-4 text-cream">
+                      <span className="text-[0.6rem] font-bold uppercase tracking-widest text-ember">
+                        {galCategory}
+                      </span>
+                      <span className="font-display text-base font-semibold">
+                        {galTitle || 'Judul Foto Anda'}
+                      </span>
+                      <span className="text-[0.7rem] text-cream/80 line-clamp-2 mt-0.5">
+                        {galDesc || 'Deskripsi foto akan tampil saat disentuh pengunjung.'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-[0.7rem] text-ink/55 text-center">
+                  Gambar yang di-upload langsung tampil di bagian <strong>Galeri</strong> halaman depan.
+                </p>
+              </div>
+            </form>
+          </div>
+
+          <div className="rounded-3xl bg-white p-6 sm:p-8 shadow-soft border border-ink/5 space-y-4">
+            <h3 className="font-display text-xl font-semibold text-forest">Daftar Foto Galeri ({gallery.length})</h3>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {gallery.map((g, idx) => {
+                const gid = g.id || `gal-${idx}`
+                return (
+                  <div key={gid} className="rounded-2xl border border-ink/10 bg-cream/30 overflow-hidden flex flex-col justify-between">
+                    <div className="aspect-[4/3] relative bg-ink/10">
+                      <Img file={g.image} alt={g.title} className="h-full w-full object-cover" width={250} />
+                      <span className="absolute top-2 left-2 rounded-full bg-ink/75 px-2.5 py-0.5 text-[0.6rem] font-bold uppercase text-white">
+                        {g.category}
+                      </span>
+                      {g.image.startsWith('data:') && (
+                        <span className="absolute top-2 right-2 rounded-full bg-ember px-2 py-0.5 text-[0.6rem] font-bold text-white">
+                          Uploaded
+                        </span>
+                      )}
+                    </div>
+                    <div className="p-3.5 space-y-2">
+                      <h4 className="font-display text-sm font-bold text-ink truncate">{g.title}</h4>
+                      <p className="text-[0.7rem] text-ink/60 line-clamp-2">{g.description}</p>
+                      <div className="flex justify-end gap-1.5 pt-2 border-t border-ink/10">
+                        <button
+                          type="button"
+                          onClick={() => handleEditGal(g)}
+                          className="rounded-lg bg-forest/10 px-2.5 py-1 text-[0.7rem] font-bold text-forest hover:bg-forest hover:text-white"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (g.id) deleteGalleryItem(g.id)
+                            onNotify(`Foto "${g.title}" dihapus.`)
+                          }}
+                          className="rounded-lg bg-rose-50 px-2.5 py-1 text-[0.7rem] font-bold text-rose-700 hover:bg-rose-600 hover:text-white"
+                        >
+                          Hapus
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 2. CULINARY MANAGER */}
       {subTab === 'culinary' && (
         <div className="space-y-8">
           <div className="rounded-3xl bg-white p-6 sm:p-8 shadow-soft border border-ink/5 space-y-6">
@@ -351,18 +712,27 @@ export function SectionsManager({ onNotify }: { onNotify: (msg: string) => void 
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-ink/70">Gambar Kuliner</label>
-                <select
-                  value={dishImage}
-                  onChange={(e) => setDishImage(e.target.value)}
-                  className="mt-1.5 w-full rounded-xl border border-ink/20 px-4 py-2.5 text-sm text-ink"
-                >
-                  {AVAILABLE_IMAGES.map((img) => (
-                    <option key={img.file} value={img.file}>
-                      {img.label} ({img.file})
-                    </option>
-                  ))}
-                </select>
+                <label className="block text-xs font-bold uppercase tracking-wider text-ink/70">
+                  Gambar Kuliner (Pilih atau Upload)
+                </label>
+                <div className="mt-1.5 flex gap-2">
+                  <select
+                    value={dishImage.startsWith('data:') ? 'basoaci.png' : dishImage}
+                    onChange={(e) => setDishImage(e.target.value)}
+                    className="flex-1 rounded-xl border border-ink/20 px-3 py-2.5 text-sm text-ink"
+                  >
+                    {AVAILABLE_IMAGES.map((img) => (
+                      <option key={img.file} value={img.file}>
+                        {img.label} ({img.file})
+                      </option>
+                    ))}
+                  </select>
+                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-ember px-3.5 py-2.5 text-xs font-bold text-white hover:bg-ember-600 shrink-0">
+                    <Upload className="h-3.5 w-3.5" />
+                    <span>{dishUploading ? '...' : 'Upload'}</span>
+                    <input type="file" accept="image/*" onChange={handleDishFileUpload} className="hidden" />
+                  </label>
+                </div>
               </div>
 
               <div className="sm:col-span-2">
@@ -435,151 +805,6 @@ export function SectionsManager({ onNotify }: { onNotify: (msg: string) => void 
                   </div>
                 </div>
               ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 2. GALLERY MANAGER */}
-      {subTab === 'gallery' && (
-        <div className="space-y-8">
-          <div className="rounded-3xl bg-white p-6 sm:p-8 shadow-soft border border-ink/5 space-y-6">
-            <div className="border-b border-ink/10 pb-4">
-              <span className="text-xs font-bold uppercase tracking-widest text-ember">
-                Galeri Visual Garut (#gallery)
-              </span>
-              <h2 className="font-display text-2xl font-semibold text-forest mt-1">
-                {editingGalId ? `Edit Foto Galeri: ${galTitle}` : 'Tambah Foto Galeri Baru'}
-              </h2>
-            </div>
-
-            <form onSubmit={handleSaveGal} className="grid gap-5 sm:grid-cols-2">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-ink/70">Judul Foto *</label>
-                <input
-                  type="text"
-                  required
-                  value={galTitle}
-                  onChange={(e) => setGalTitle(e.target.value)}
-                  placeholder="Contoh: Sunrise Puncak Papandayan"
-                  className="mt-1.5 w-full rounded-xl border border-ink/20 px-4 py-2.5 text-sm font-semibold text-ink"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-ink/70">Kategori Filter</label>
-                <select
-                  value={galCategory}
-                  onChange={(e) => setGalCategory(e.target.value as GalleryCategory)}
-                  className="mt-1.5 w-full rounded-xl border border-ink/20 px-4 py-2.5 text-sm text-ink"
-                >
-                  {GALLERY_CATEGORIES.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-ink/70">Pilih File Gambar</label>
-                <select
-                  value={galImage}
-                  onChange={(e) => setGalImage(e.target.value)}
-                  className="mt-1.5 w-full rounded-xl border border-ink/20 px-4 py-2.5 text-sm text-ink"
-                >
-                  {AVAILABLE_IMAGES.map((img) => (
-                    <option key={img.file} value={img.file}>
-                      {img.label} ({img.file})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex items-end">
-                <label className="inline-flex items-center gap-2.5 cursor-pointer rounded-xl bg-cream/60 px-4 py-2.5 border border-ink/10 w-full">
-                  <input
-                    type="checkbox"
-                    checked={galTall}
-                    onChange={(e) => setGalTall(e.target.checked)}
-                    className="rounded text-forest h-4 w-4"
-                  />
-                  <span className="text-xs font-semibold text-ink">Tampilkan Rasio Vertikal / Portrait (Tall)</span>
-                </label>
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-bold uppercase tracking-wider text-ink/70">Caption / Deskripsi Foto *</label>
-                <textarea
-                  rows={2}
-                  required
-                  value={galDesc}
-                  onChange={(e) => setGalDesc(e.target.value)}
-                  placeholder="Tuliskan keterangan suasana foto..."
-                  className="mt-1.5 w-full rounded-xl border border-ink/20 p-3 text-sm text-ink"
-                />
-              </div>
-
-              <div className="sm:col-span-2 flex gap-3">
-                <button
-                  type="submit"
-                  className="inline-flex items-center gap-2 rounded-full bg-forest px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow hover:bg-forest-700"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>{editingGalId ? 'Simpan Perubahan Foto' : 'Tambahkan ke Galeri'}</span>
-                </button>
-                {editingGalId && (
-                  <button
-                    type="button"
-                    onClick={resetGalForm}
-                    className="rounded-full border border-ink/20 px-5 py-3 text-xs font-semibold text-ink/70"
-                  >
-                    Batal
-                  </button>
-                )}
-              </div>
-            </form>
-          </div>
-
-          <div className="rounded-3xl bg-white p-6 sm:p-8 shadow-soft border border-ink/5 space-y-4">
-            <h3 className="font-display text-xl font-semibold text-forest">Daftar Foto Galeri ({gallery.length})</h3>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {gallery.map((g, idx) => {
-                const gid = g.id || `gal-${idx}`
-                return (
-                  <div key={gid} className="rounded-2xl border border-ink/10 bg-cream/30 overflow-hidden flex flex-col justify-between">
-                    <div className="aspect-[4/3] relative bg-ink/10">
-                      <Img file={g.image} alt={g.title} className="h-full w-full object-cover" width={250} />
-                      <span className="absolute top-2 left-2 rounded-full bg-ink/75 px-2.5 py-0.5 text-[0.6rem] font-bold uppercase text-white">
-                        {g.category}
-                      </span>
-                    </div>
-                    <div className="p-3.5 space-y-2">
-                      <h4 className="font-display text-sm font-bold text-ink truncate">{g.title}</h4>
-                      <p className="text-[0.7rem] text-ink/60 line-clamp-2">{g.description}</p>
-                      <div className="flex justify-end gap-1.5 pt-2 border-t border-ink/10">
-                        <button
-                          type="button"
-                          onClick={() => handleEditGal(g)}
-                          className="rounded-lg bg-forest/10 px-2.5 py-1 text-[0.7rem] font-bold text-forest hover:bg-forest hover:text-white"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (g.id) deleteGalleryItem(g.id)
-                            onNotify(`Foto "${g.title}" dihapus.`)
-                          }}
-                          className="rounded-lg bg-rose-50 px-2.5 py-1 text-[0.7rem] font-bold text-rose-700 hover:bg-rose-600 hover:text-white"
-                        >
-                          Hapus
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
             </div>
           </div>
         </div>

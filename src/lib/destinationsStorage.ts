@@ -10,6 +10,9 @@ const PRICES_EVENT = 'garut_tour_prices_updated'
 export const DEFAULT_TOUR_PRICES: Record<string, number> = {
   'Garut One-Day City Tour': 350000,
   'Papandayan Volcano & Highland Trek': 450000,
+  'Wisata Trekking & Camping — Gunung Papandayan': 480000,
+  'Sunrise Trekking & Highland Camping — Gunung Guntur / Talaga Bodas': 520000,
+  'Trekking & Camping': 480000,
   'Garut Heritage & Lake Experience': 375000,
   'Garut South Coast Explorer (Santolo & Rancabuaya)': 550000,
   'Custom itinerary': 400000,

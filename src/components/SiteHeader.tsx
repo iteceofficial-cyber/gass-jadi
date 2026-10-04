@@ -153,30 +153,37 @@ export function SiteHeader({ overHero = false }: { overHero?: boolean }) {
           <div className="absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-forest via-ember to-forest animate-pulse" />
         )}
 
-        <div className="mx-auto flex h-18 max-w-7xl items-center justify-between gap-4 px-5 py-4 lg:px-8">
+        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
           <Link
             to="/"
             hash="top"
             onClick={() => handleNavClick('top')}
             aria-label="Garut Journey — home"
+            className="shrink-0"
           >
             <Logo light={!solid} />
           </Link>
 
-          <nav aria-label="Main" className="hidden xl:block">
-            <ul className="flex items-center gap-1">
+          <nav aria-label="Main" className="hidden xl:flex xl:items-center xl:justify-center flex-1 min-w-0 px-2">
+            <ul
+              className={`flex items-center gap-0.5 2xl:gap-1 rounded-full px-2 py-1 transition ${
+                solid
+                  ? 'bg-ink/[0.03] ring-1 ring-ink/[0.06]'
+                  : 'bg-black/20 backdrop-blur-md ring-1 ring-white/15'
+              }`}
+            >
               {navLinks.map((l) => {
                 const labelText = getTranslatedLabel(l.label, t)
                 return (
-                  <li key={l.label}>
+                  <li key={l.label} className="shrink-0">
                     {l.to ? (
                       <Link
                         to={l.to}
-                        className={`rounded-full px-3 py-2 text-[0.82rem] font-semibold transition flex items-center gap-1.5 ${
+                        className={`whitespace-nowrap rounded-full px-2.5 2xl:px-3 py-1.5 text-[0.78rem] 2xl:text-[0.82rem] font-semibold transition inline-flex items-center gap-1.5 ${
                           solid ? 'text-forest hover:bg-forest/10' : 'text-ember hover:bg-white/10'
                         }`}
                       >
-                        <span className="h-1.5 w-1.5 rounded-full bg-ember" />
+                        <span className="h-1.5 w-1.5 rounded-full bg-ember shrink-0" />
                         <span>{labelText}</span>
                       </Link>
                     ) : (
@@ -184,10 +191,10 @@ export function SiteHeader({ overHero = false }: { overHero?: boolean }) {
                         to="/"
                         hash={l.hash}
                         onClick={() => handleNavClick(l.hash)}
-                        className={`rounded-full px-3 py-2 text-[0.82rem] font-medium transition ${
+                        className={`whitespace-nowrap block rounded-full px-2.5 2xl:px-3 py-1.5 text-[0.78rem] 2xl:text-[0.82rem] font-medium transition ${
                           solid
-                            ? 'text-ink/75 hover:bg-ink/5 hover:text-ink'
-                            : 'text-cream/85 hover:bg-white/10 hover:text-white'
+                            ? 'text-ink/80 hover:bg-forest/10 hover:text-forest'
+                            : 'text-cream/90 hover:bg-white/15 hover:text-white'
                         }`}
                       >
                         {labelText}
@@ -199,11 +206,11 @@ export function SiteHeader({ overHero = false }: { overHero?: boolean }) {
             </ul>
           </nav>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2 shrink-0">
             {/* Header Language Switcher */}
             <LanguageSelector solid={solid} />
 
-            <BookLink className={`${btn.primary} hidden !py-2 sm:inline-flex text-xs`}>
+            <BookLink className={`${btn.primary} hidden !px-4 !py-2 sm:inline-flex text-xs whitespace-nowrap`}>
               {t.nav.bookTour}
             </BookLink>
 

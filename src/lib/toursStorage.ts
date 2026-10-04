@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { cityTours as defaultCityTours, packages as defaultPackages, type CityTour, type TourPackage } from '@/data/tours'
 
-const CITY_TOURS_KEY = 'gj:city-tours:v1'
-const PACKAGES_KEY = 'gj:tour-packages:v1'
+const CITY_TOURS_KEY = 'gj:city-tours:v2'
+const PACKAGES_KEY = 'gj:tour-packages:v2'
 
 export function getStoredCityTours(): CityTour[] {
   if (typeof window === 'undefined') return defaultCityTours
