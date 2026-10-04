@@ -1,6 +1,7 @@
 export type GalleryCategory = 'Nature' | 'City' | 'Culinary' | 'Culture' | 'Adventure'
 
 export interface GalleryItem {
+  id?: string
   image: string
   title: string
   category: GalleryCategory

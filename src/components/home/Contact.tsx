@@ -13,16 +13,9 @@ import { formToObject, submitNetlifyForm } from '@/lib/forms'
 import { readPlanSummary, useSelectedTour } from '@/lib/trip'
 import { PaymentModal } from '@/components/PaymentModal'
 import { useTourPrices } from '@/lib/destinationsStorage'
+import { useCityTours, useTourPackages } from '@/lib/toursStorage'
 import { useLanguage } from '@/lib/i18n'
 import { useSiteSettings } from '@/lib/siteSettings'
-
-const tourOptions = [
-  'Garut One-Day City Tour',
-  'Papandayan Volcano & Highland Trek',
-  'Garut Heritage & Lake Experience',
-  'Garut South Coast Explorer (Santolo & Rancabuaya)',
-  'Custom itinerary',
-]
 
 const MEETING_POINTS = [
   'Stasiun Kereta Api Garut (KAI)',
@@ -46,7 +39,18 @@ const MEETING_TIMES = [
 function InquiryForm() {
   const [tour, setTour] = useSelectedTour()
   const { prices } = useTourPrices()
+  const cityTours = useCityTours()
+  const packages = useTourPackages()
   const { t } = useLanguage()
+
+  const tourOptions = Array.from(
+    new Set([
+      ...cityTours.map((ct) => ct.name),
+      ...packages.map((p) => p.name),
+      ...Object.keys(prices),
+      'Custom itinerary',
+    ]),
+  )
   const [plan, setPlan] = useState('')
   const [state, setState] = useState<'idle' | 'sending' | 'done' | 'error'>('idle')
   const [showPaymentModal, setShowPaymentModal] = useState(false)

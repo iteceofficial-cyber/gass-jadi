@@ -2,7 +2,7 @@ import { Check, Clock, MapPin, Users } from 'lucide-react'
 import { useState } from 'react'
 import { BookLink, btn } from '@/components/BookLink'
 import { Reveal, SectionHeading } from '@/components/Reveal'
-import { packages } from '@/data/tours'
+import { useTourPackages } from '@/lib/toursStorage'
 import { Chip } from './Destinations'
 import { useLanguage } from '@/lib/i18n'
 
@@ -12,6 +12,7 @@ export function Packages() {
   const [days, setDays] = useState<number>(0)
   const [style, setStyle] = useState<string>('All styles')
   const { t } = useLanguage()
+  const packages = useTourPackages()
 
   const durationFilters = [
     { label: t.packages.anyLength, value: 0 },

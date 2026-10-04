@@ -22,6 +22,8 @@ function getTranslatedLabel(label: string, t: any): string {
       return t.nav.itinerary
     case 'gallery':
       return t.nav.gallery
+    case 'reviews':
+      return t.nav.reviews || 'Ulasan'
     case 'login admin':
       return t.nav.loginAdmin
     case 'travel guide':

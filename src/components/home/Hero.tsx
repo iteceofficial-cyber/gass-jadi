@@ -11,10 +11,9 @@ import {
 import { useMemo, useRef, useState } from 'react'
 import { Img } from '@/components/Img'
 import { btn } from '@/components/BookLink'
-import { articles } from '@/data/articles'
-import { dishes } from '@/data/culinary'
-import { destinations } from '@/data/destinations'
-import { experiences } from '@/data/experiences'
+import { useArticles } from '@/lib/articlesStorage'
+import { useCulinary, useExperiences } from '@/lib/contentStorage'
+import { useDestinations } from '@/lib/destinationsStorage'
 import { useParallax } from '@/lib/useParallax'
 import { useLanguage } from '@/lib/i18n'
 import { useSiteSettings } from '@/lib/siteSettings'
@@ -26,6 +25,10 @@ type Result =
   | { kind: 'guide'; label: string; meta: string; slug: string }
 
 function useSearch(query: string): Result[] {
+  const { destinations } = useDestinations()
+  const dishes = useCulinary()
+  const experiences = useExperiences()
+  const { articles } = useArticles()
   return useMemo(() => {
     const q = query.trim().toLowerCase()
     if (q.length < 2) return []
@@ -45,7 +48,7 @@ function useSearch(query: string): Result[] {
       if (has(a.title, a.excerpt, a.category)) out.push({ kind: 'guide', label: a.title, meta: 'Travel guide', slug: a.slug })
     })
     return out.slice(0, 7)
-  }, [query])
+  }, [query, destinations, dishes, experiences, articles])
 }
 
 const icons = { destination: MapPin, food: UtensilsCrossed, activity: Compass, guide: BookOpen }

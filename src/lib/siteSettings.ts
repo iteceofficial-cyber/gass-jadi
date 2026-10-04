@@ -58,6 +58,13 @@ export interface SiteSettings {
   storyP2?: string
   storyP3?: string
   storyWelcome?: string
+  storyImage?: string
+  storySecondaryImage?: string
+  // Booking Banner section
+  bookingEyebrow?: string
+  bookingTitle?: string
+  bookingSubtitle?: string
+  bookingImage?: string
   // Footer & Theme
   footerTagline?: string
   defaultLanguage: LanguageCode

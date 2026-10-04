@@ -58,9 +58,6 @@ async function prerender() {
           // Also write directly to dist/index.html & dist/404.html
           fs.writeFileSync(path.join(distDir, 'index.html'), html, 'utf-8')
           fs.writeFileSync(path.join(distDir, '404.html'), html, 'utf-8')
-
-          // Also write to public/index.html
-          fs.writeFileSync(path.join(publicDir, 'index.html'), html, 'utf-8')
         } else {
           const routeClean = route.replace(/^\//, '')
 

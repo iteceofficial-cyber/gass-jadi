@@ -35,6 +35,9 @@ import {
   ShoppingBag,
   Smartphone,
   Sparkles,
+  Star,
+  Compass,
+  Layers,
   Tag,
   Trash2,
   TrendingUp,
@@ -44,6 +47,9 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Img } from '@/components/Img'
+import { ToursManager } from '@/components/admin/ToursManager'
+import { ReviewsManager } from '@/components/admin/ReviewsManager'
+import { SectionsManager } from '@/components/admin/SectionsManager'
 import { type Article, formatDate } from '@/data/articles'
 import { type Category, type Destination } from '@/data/destinations'
 import { useArticles } from '@/lib/articlesStorage'
@@ -165,9 +171,18 @@ export function AdminDashboard() {
   const [customLogoUrl, setCustomLogoUrl] = useState(settings.customLogoUrl || '')
   const [logoHeight, setLogoHeight] = useState<number>(settings.logoHeight || 36)
 
-  // Navigation tab: 'bookings' | 'traffic' | 'settings' | 'pricing_destinations' | 'payments' | 'list' | 'editor'
+  // Navigation tab
   const [activeTab, setActiveTab] = useState<
-    'bookings' | 'traffic' | 'settings' | 'pricing_destinations' | 'payments' | 'list' | 'editor'
+    | 'bookings'
+    | 'traffic'
+    | 'tours_packages'
+    | 'reviews'
+    | 'all_sections'
+    | 'settings'
+    | 'pricing_destinations'
+    | 'payments'
+    | 'list'
+    | 'editor'
   >('bookings')
 
   const [search, setSearch] = useState('')
@@ -907,21 +922,6 @@ Tim kami siap menyambut kedatangan Anda di Garut! Ada hal yang ingin dipersiapka
                 <span>Masuk ke WP Admin</span>
               </button>
             </form>
-
-            <div className="mt-6 border-t border-ink/10 pt-4 text-center">
-              <div className="rounded-xl bg-cream/70 p-3 text-left space-y-1">
-                <p className="text-[0.7rem] font-bold text-forest uppercase tracking-wider">Kredensial Login Aktif:</p>
-                <p className="text-xs text-ink/75">
-                  &bull; User Name : <strong className="text-ink font-mono font-bold">{adminUsername || 'admin'}</strong>
-                </p>
-                <p className="text-xs text-ink/75">
-                  &bull; Password : <strong className="text-ink font-mono font-bold">{adminPassword || 'admin'}</strong>
-                </p>
-                <p className="text-[0.65rem] text-ink/50 pt-1 italic">
-                  *Username dan password ini dapat diubah di menu "Edit Website &rarr; Ganti Akun Admin".
-                </p>
-              </div>
-            </div>
           </div>
 
           <div className="mt-6 text-center">
@@ -990,6 +990,39 @@ Tim kami siap menyambut kedatangan Anda di Garut! Ada hal yang ingin dipersiapka
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping" />
                 <span>{traffic.liveVisitors} Live</span>
               </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('tours_packages')}
+              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition flex items-center gap-1.5 shrink-0 ${
+                activeTab === 'tours_packages' ? 'bg-forest text-white' : 'bg-ink/5 text-ink/75 hover:bg-ink/10'
+              }`}
+            >
+              <Compass className="h-3.5 w-3.5 text-ember" />
+              <span>Paket Tour</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('reviews')}
+              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition flex items-center gap-1.5 shrink-0 ${
+                activeTab === 'reviews' ? 'bg-forest text-white' : 'bg-ink/5 text-ink/75 hover:bg-ink/10'
+              }`}
+            >
+              <Star className="h-3.5 w-3.5 text-amber-500" />
+              <span>Ulasan Klien</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('all_sections')}
+              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition flex items-center gap-1.5 shrink-0 ${
+                activeTab === 'all_sections' ? 'bg-forest text-white' : 'bg-ink/5 text-ink/75 hover:bg-ink/10'
+              }`}
+            >
+              <Layers className="h-3.5 w-3.5 text-emerald-600" />
+              <span>Kuliner, Galeri & Seksi</span>
             </button>
 
             <button
@@ -1091,6 +1124,12 @@ Tim kami siap menyambut kedatangan Anda di Garut! Ada hal yang ingin dipersiapka
                   ? 'Data Booking & Jadwal Kedatangan Pelanggan'
                   : activeTab === 'traffic'
                   ? 'Statistik & Trafik Kunjungan Website Real-Time'
+                  : activeTab === 'tours_packages'
+                  ? 'Kelola & Tambah Paket Tour & City Tour'
+                  : activeTab === 'reviews'
+                  ? 'Kelola Ulasan & Testimoni Klien'
+                  : activeTab === 'all_sections'
+                  ? 'Kelola Kuliner, Galeri Foto, Pengalaman & Banner'
                   : activeTab === 'settings'
                   ? 'Pengaturan & Edit Seluruh Bagian Website'
                   : activeTab === 'payments'
@@ -2150,13 +2189,28 @@ Tim kami siap menyambut kedatangan Anda di Garut! Ada hal yang ingin dipersiapka
         )}
 
         {/* ======================================= */}
+        {/* TAB: KELOLA PAKET TOUR & CITY TOUR      */}
+        {/* ======================================= */}
+        {activeTab === 'tours_packages' && <ToursManager onNotify={notifySuccess} />}
+
+        {/* ======================================= */}
+        {/* TAB: KELOLA ULASAN KLIEN                */}
+        {/* ======================================= */}
+        {activeTab === 'reviews' && <ReviewsManager onNotify={notifySuccess} />}
+
+        {/* ======================================= */}
+        {/* TAB: KELOLA KULINER, GALERI & SEKSI     */}
+        {/* ======================================= */}
+        {activeTab === 'all_sections' && <SectionsManager onNotify={notifySuccess} />}
+
+        {/* ======================================= */}
         {/* TAB 2: KELOLA HARGA & DESTINASI         */}
         {/* ======================================= */}
         {activeTab === 'pricing_destinations' && (
           <div className="space-y-10">
             {/* Section A: Edit Paket Tour Prices */}
             <div className="rounded-3xl bg-white p-6 sm:p-8 shadow-soft border border-ink/5 space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-ink/10 pb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-ink/10 pb-4">
                 <div>
                   <span className="text-xs font-bold uppercase tracking-widest text-ember">
                     Manajemen Harga Wisata
@@ -2168,11 +2222,19 @@ Tim kami siap menyambut kedatangan Anda di Garut! Ada hal yang ingin dipersiapka
                     Harga ini langsung tersinkronisasi ke formulir booking dan perhitungan total biaya pelanggan.
                   </p>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('tours_packages')}
+                  className="self-start inline-flex items-center gap-2 rounded-full bg-ember px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow hover:bg-ember-600 transition shrink-0"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Tambah / Edit Paket Tour</span>
+                </button>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {Object.keys(DEFAULT_TOUR_PRICES).map((tourName) => {
-                  const currentPrice = priceForm[tourName] || DEFAULT_TOUR_PRICES[tourName]
+                {Object.keys({ ...DEFAULT_TOUR_PRICES, ...prices }).map((tourName) => {
+                  const currentPrice = priceForm[tourName] || prices[tourName] || DEFAULT_TOUR_PRICES[tourName] || 350000
                   return (
                     <div
                       key={tourName}

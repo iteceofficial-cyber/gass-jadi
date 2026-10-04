@@ -43,6 +43,7 @@ export const navLinks: Array<{ label: string; hash?: string; to?: string }> = [
   { label: 'Culinary', hash: 'culinary' },
   { label: 'Itinerary', hash: 'itinerary' },
   { label: 'Gallery', hash: 'gallery' },
+  { label: 'Reviews', hash: 'testimonials' },
   { label: 'Travel Guide', hash: 'guide' },
   { label: 'Contact', hash: 'contact' },
 ]

@@ -56,11 +56,11 @@ export const cityTours: CityTour[] = [
   },
 ]
 
-export type PackageTier = 'Explorer' | 'Garut Discovery' | 'Premium Experience'
+export type PackageTier = string
 
 export interface TourPackage {
   id: string
-  name: PackageTier
+  name: string
   tagline: string
   duration: string
   durationDays: 1 | 2 | 3

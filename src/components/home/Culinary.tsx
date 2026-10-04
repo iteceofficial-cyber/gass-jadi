@@ -2,11 +2,12 @@ import { ArrowRight, MapPin } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import { Img } from '@/components/Img'
 import { Reveal, SectionHeading } from '@/components/Reveal'
-import { dishes } from '@/data/culinary'
+import { useCulinary } from '@/lib/contentStorage'
 import { useLanguage } from '@/lib/i18n'
 
 export function Culinary() {
   const { t } = useLanguage()
+  const dishes = useCulinary()
 
   return (
     <section id="culinary" className="bg-ink py-24 text-cream sm:py-32">

@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { MessageCircle, X, ZoomIn } from 'lucide-react'
 import { Img } from '@/components/Img'
 import { SectionHeading } from '@/components/Reveal'
-import { gallery, galleryFilters, type GalleryItem } from '@/data/gallery'
+import { galleryFilters, type GalleryItem } from '@/data/gallery'
+import { useGallery } from '@/lib/contentStorage'
 import { whatsappLink } from '@/data/site'
 import { Chip } from './Destinations'
 import { useLanguage } from '@/lib/i18n'
@@ -11,6 +12,7 @@ export function Gallery() {
   const [filter, setFilter] = useState<(typeof galleryFilters)[number]>('All')
   const [activeItem, setActiveItem] = useState<GalleryItem | null>(null)
   const { t } = useLanguage()
+  const gallery = useGallery()
 
   return (
     <section id="gallery" className="bg-cream-200/60 py-24 sm:py-32">

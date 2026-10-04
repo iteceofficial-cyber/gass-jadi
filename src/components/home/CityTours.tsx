@@ -3,7 +3,8 @@ import { useState } from 'react'
 import { BookLink, btn } from '@/components/BookLink'
 import { Img } from '@/components/Img'
 import { Reveal, SectionHeading } from '@/components/Reveal'
-import { cityTours, type CityTour } from '@/data/tours'
+import { type CityTour } from '@/data/tours'
+import { useCityTours } from '@/lib/toursStorage'
 import { useLanguage } from '@/lib/i18n'
 
 function TourCard({ tour, index }: { tour: CityTour; index: number }) {
@@ -70,6 +71,7 @@ function TourCard({ tour, index }: { tour: CityTour; index: number }) {
 
 export function CityTours() {
   const { t } = useLanguage()
+  const cityTours = useCityTours()
 
   return (
     <section id="city-tours" className="relative overflow-hidden bg-forest py-24 text-cream sm:py-32">

@@ -15,11 +15,11 @@ export function BrandStory() {
         <Reveal className="relative">
           <div className="relative aspect-[4/5] overflow-hidden rounded-[2.5rem] shadow-lift">
             <div ref={img} className="absolute inset-[-8%_0]">
-              <Img file="community.png" alt="A local farmer walking along the rice terraces of Garut at sunrise" sizes="(min-width: 1024px) 45vw, 100vw" className="h-full w-full object-cover" />
+              <Img file={settings.storyImage || 'community.png'} alt="A local farmer walking along the rice terraces of Garut at sunrise" sizes="(min-width: 1024px) 45vw, 100vw" className="h-full w-full object-cover" />
             </div>
           </div>
           <div className="absolute -bottom-8 -right-3 w-44 overflow-hidden rounded-3xl border-[6px] border-cream shadow-lift sm:-right-8 sm:w-56">
-            <Img file="craft.png" alt="A Garut artisan crafting leather by hand" sizes="224px" width={600} className="aspect-square w-full object-cover" />
+            <Img file={settings.storySecondaryImage || 'craft.png'} alt="A Garut artisan crafting leather by hand" sizes="224px" width={600} className="aspect-square w-full object-cover" />
           </div>
         </Reveal>
 

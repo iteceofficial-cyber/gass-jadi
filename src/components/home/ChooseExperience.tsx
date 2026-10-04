@@ -4,17 +4,21 @@ import { useState } from 'react'
 import { BookLink } from '@/components/BookLink'
 import { Img } from '@/components/Img'
 import { Reveal, SectionHeading } from '@/components/Reveal'
-import { getDestination } from '@/data/destinations'
-import { experiences } from '@/data/experiences'
-import { packages } from '@/data/tours'
+import { useDestinations } from '@/lib/destinationsStorage'
+import { useExperiences } from '@/lib/contentStorage'
+import { useTourPackages } from '@/lib/toursStorage'
 import { useLanguage } from '@/lib/i18n'
 
 export function ChooseExperience() {
-  const [active, setActive] = useState(experiences[0].id)
-  const exp = experiences.find((e) => e.id === active)!
-  const dests = exp.destinations.map((s) => getDestination(s)!).filter(Boolean)
-  const pkgs = packages.filter((p) => exp.packages.includes(p.id))
+  const experiences = useExperiences()
+  const { destinations } = useDestinations()
+  const packages = useTourPackages()
+  const [active, setActive] = useState(experiences[0]?.id || 'nature')
+  const exp = experiences.find((e) => e.id === active) ?? experiences[0]
   const { t } = useLanguage()
+  if (!exp) return null
+  const dests = exp.destinations.map((s) => destinations.find((d) => d.slug === s)!).filter(Boolean)
+  const pkgs = packages.filter((p) => exp.packages.includes(p.id))
 
   return (
     <section id="experience" className="py-24 sm:py-32">
