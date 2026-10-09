@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { doc, setDoc, onSnapshot } from 'firebase/firestore'
+import { db, handleFirestoreError, logFirestoreError, OperationType } from '@/lib/firebase'
 
 export interface BankAccountConfig {
   bankName: string
@@ -95,41 +97,64 @@ export function getStoredPaymentConfig(): PaymentGatewayConfig {
   return DEFAULT_PAYMENT_CONFIG
 }
 
-export function savePaymentConfig(config: PaymentGatewayConfig): boolean {
-  if (typeof window === 'undefined') return false
+export function saveLocalPaymentConfig(config: PaymentGatewayConfig) {
+  if (typeof window === 'undefined') return
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(config))
     window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: config }))
+  } catch (err) {
+    console.error('Failed to save payment settings locally:', err)
+  }
+}
+
+export async function savePaymentConfig(config: PaymentGatewayConfig): Promise<boolean> {
+  saveLocalPaymentConfig(config)
+
+  try {
+    await setDoc(doc(db, 'payments', 'default'), {
+      ...config,
+      updatedAt: new Date().toISOString(),
+    })
     return true
   } catch (err) {
-    console.error('Failed to save payment settings:', err)
+    handleFirestoreError(err, OperationType.WRITE, 'payments/default')
     return false
   }
 }
 
-export function resetPaymentConfigToDefault(): boolean {
-  if (typeof window === 'undefined') return false
-  try {
-    localStorage.removeItem(STORAGE_KEY)
-    window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: DEFAULT_PAYMENT_CONFIG }))
-    return true
-  } catch (err) {
-    console.error('Failed to reset payment settings:', err)
-    return false
-  }
+export async function resetPaymentConfigToDefault(): Promise<boolean> {
+  return savePaymentConfig(DEFAULT_PAYMENT_CONFIG)
 }
 
 export function usePaymentSettings() {
-  const [config, setConfig] = useState<PaymentGatewayConfig>(DEFAULT_PAYMENT_CONFIG)
+  const [config, setConfig] = useState<PaymentGatewayConfig>(() => getStoredPaymentConfig())
 
   useEffect(() => {
-    setConfig(getStoredPaymentConfig())
+    if (typeof window === 'undefined') return
+
     const handler = () => setConfig(getStoredPaymentConfig())
     window.addEventListener(EVENT_NAME, handler)
     window.addEventListener('storage', handler)
+
+    const unsub = onSnapshot(
+      doc(db, 'payments', 'default'),
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const remote = docSnap.data() as Partial<PaymentGatewayConfig>
+          const merged = { ...DEFAULT_PAYMENT_CONFIG, ...remote }
+          setConfig(merged)
+          saveLocalPaymentConfig(merged)
+        }
+      },
+      (error) => {
+        logFirestoreError(error, OperationType.GET, 'payments/default')
+      }
+    )
+
     return () => {
       window.removeEventListener(EVENT_NAME, handler)
       window.removeEventListener('storage', handler)
+      unsub()
     }
   }, [])
 

@@ -1,4 +1,4 @@
-import { Check, Clock, Edit3, Plus, RotateCcw, Sparkles, Star, Tent, Trash2, Upload, Users } from 'lucide-react'
+import { Check, Clock, Edit3, Plus, RotateCcw, Sparkles, Star, Trash2, Upload, Users } from 'lucide-react'
 import { useState, type ChangeEvent, type FormEvent } from 'react'
 import { Img } from '@/components/Img'
 import { type CityTour, type TourPackage } from '@/data/tours'

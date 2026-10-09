@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { doc, setDoc, onSnapshot } from 'firebase/firestore'
+import { db, handleFirestoreError, logFirestoreError, OperationType } from '@/lib/firebase'
 import { site as defaultSite } from '@/data/site'
 import type { LanguageCode } from '@/lib/i18n'
 
@@ -135,31 +137,62 @@ export function getStoredSiteSettings(): SiteSettings {
   return initialSiteSettings
 }
 
-export function saveSiteSettings(settings: Partial<SiteSettings>): boolean {
-  if (typeof window === 'undefined') return false
+export function saveLocalSiteSettings(settings: SiteSettings) {
+  if (typeof window === 'undefined') return
   try {
-    const current = getStoredSiteSettings()
-    const updated = { ...current, ...settings }
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(updated))
-    window.dispatchEvent(new CustomEvent(SETTINGS_EVENT, { detail: updated }))
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
+    window.dispatchEvent(new CustomEvent(SETTINGS_EVENT, { detail: settings }))
+  } catch (err) {
+    console.error('Failed to save site settings locally:', err)
+  }
+}
+
+export async function saveSiteSettings(settings: Partial<SiteSettings>): Promise<boolean> {
+  const current = getStoredSiteSettings()
+  const updated = { ...current, ...settings }
+  saveLocalSiteSettings(updated)
+
+  try {
+    await setDoc(doc(db, 'settings', 'default'), {
+      ...updated,
+      updatedAt: new Date().toISOString(),
+    })
     return true
   } catch (err) {
-    console.error('Failed to save site settings:', err)
+    handleFirestoreError(err, OperationType.WRITE, 'settings/default')
     return false
   }
 }
 
 export function useSiteSettings() {
-  const [settings, setSettings] = useState<SiteSettings>(initialSiteSettings)
+  const [settings, setSettings] = useState<SiteSettings>(() => getStoredSiteSettings())
 
   useEffect(() => {
-    setSettings(getStoredSiteSettings())
+    if (typeof window === 'undefined') return
+
     const handler = () => setSettings(getStoredSiteSettings())
     window.addEventListener(SETTINGS_EVENT, handler)
     window.addEventListener('storage', handler)
+
+    const unsub = onSnapshot(
+      doc(db, 'settings', 'default'),
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const remote = docSnap.data() as Partial<SiteSettings>
+          const merged = { ...initialSiteSettings, ...remote }
+          setSettings(merged)
+          saveLocalSiteSettings(merged)
+        }
+      },
+      (error) => {
+        logFirestoreError(error, OperationType.GET, 'settings/default')
+      }
+    )
+
     return () => {
       window.removeEventListener(SETTINGS_EVENT, handler)
       window.removeEventListener('storage', handler)
+      unsub()
     }
   }, [])
 

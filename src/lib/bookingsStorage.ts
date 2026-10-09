@@ -1,4 +1,13 @@
 import { useEffect, useState } from 'react'
+import {
+  collection,
+  doc,
+  setDoc,
+  deleteDoc,
+  updateDoc,
+  onSnapshot,
+} from 'firebase/firestore'
+import { db, handleFirestoreError, logFirestoreError, OperationType } from '@/lib/firebase'
 
 export type PaymentStatus = 'Menunggu Konfirmasi' | 'Lunas' | 'Selesai' | 'Dibatalkan'
 
@@ -73,71 +82,110 @@ export function getStoredBookings(): Booking[] {
   if (typeof window === 'undefined') return INITIAL_BOOKINGS
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_BOOKINGS))
-      return INITIAL_BOOKINGS
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed
     }
-    const parsed = JSON.parse(raw)
-    if (Array.isArray(parsed)) return parsed
   } catch (err) {
     console.error('Failed to get stored bookings:', err)
   }
   return INITIAL_BOOKINGS
 }
 
-export function saveBooking(booking: Booking): boolean {
-  if (typeof window === 'undefined') return false
+export function saveLocalBookings(bookings: Booking[]) {
+  if (typeof window === 'undefined') return
   try {
-    const current = getStoredBookings()
-    const updated = [booking, ...current.filter((b) => b.id !== booking.id)]
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
-    window.dispatchEvent(new CustomEvent(CHANGE_EVENT, { detail: updated }))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(bookings))
+    window.dispatchEvent(new CustomEvent(CHANGE_EVENT, { detail: bookings }))
+  } catch (err) {
+    console.error('Failed to update local cache:', err)
+  }
+}
+
+export async function saveBooking(booking: Booking): Promise<boolean> {
+  // 1. Immediately update local cache for instant UI feedback
+  const current = getStoredBookings()
+  const updated = [booking, ...current.filter((b) => b.id !== booking.id)]
+  saveLocalBookings(updated)
+
+  // 2. Persist to Firestore
+  try {
+    await setDoc(doc(db, 'bookings', booking.id), booking)
     return true
   } catch (err) {
-    console.error('Failed to save booking:', err)
+    handleFirestoreError(err, OperationType.WRITE, `bookings/${booking.id}`)
     return false
   }
 }
 
-export function updateBookingStatus(id: string, status: PaymentStatus): boolean {
-  if (typeof window === 'undefined') return false
+export async function updateBookingStatus(id: string, status: PaymentStatus): Promise<boolean> {
+  const current = getStoredBookings()
+  const updated = current.map((b) => (b.id === id ? { ...b, paymentStatus: status } : b))
+  saveLocalBookings(updated)
+
   try {
-    const current = getStoredBookings()
-    const updated = current.map((b) => (b.id === id ? { ...b, paymentStatus: status } : b))
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
-    window.dispatchEvent(new CustomEvent(CHANGE_EVENT, { detail: updated }))
+    await updateDoc(doc(db, 'bookings', id), { paymentStatus: status })
     return true
   } catch (err) {
-    console.error('Failed to update booking status:', err)
+    handleFirestoreError(err, OperationType.UPDATE, `bookings/${id}`)
     return false
   }
 }
 
-export function deleteBooking(id: string): boolean {
-  if (typeof window === 'undefined') return false
+export async function deleteBooking(id: string): Promise<boolean> {
+  const current = getStoredBookings()
+  const updated = current.filter((b) => b.id !== id)
+  saveLocalBookings(updated)
+
   try {
-    const current = getStoredBookings()
-    const updated = current.filter((b) => b.id !== id)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
-    window.dispatchEvent(new CustomEvent(CHANGE_EVENT, { detail: updated }))
+    await deleteDoc(doc(db, 'bookings', id))
     return true
   } catch (err) {
-    console.error('Failed to delete booking:', err)
+    handleFirestoreError(err, OperationType.DELETE, `bookings/${id}`)
     return false
   }
 }
 
 export function useBookings() {
-  const [bookings, setBookings] = useState<Booking[]>(INITIAL_BOOKINGS)
+  const [bookings, setBookings] = useState<Booking[]>(() => getStoredBookings())
 
   useEffect(() => {
-    setBookings(getStoredBookings())
-    const handler = () => setBookings(getStoredBookings())
-    window.addEventListener(CHANGE_EVENT, handler)
-    window.addEventListener('storage', handler)
+    if (typeof window === 'undefined') return
+
+    // 1. Listen for local events
+    const localHandler = () => setBookings(getStoredBookings())
+    window.addEventListener(CHANGE_EVENT, localHandler)
+    window.addEventListener('storage', localHandler)
+
+    // 2. Listen for real-time Firestore sync across all devices & links
+    const unsub = onSnapshot(
+      collection(db, 'bookings'),
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const remoteList: Booking[] = []
+          snapshot.forEach((docSnap) => {
+            remoteList.push(docSnap.data() as Booking)
+          })
+          // Sort by creation date descending
+          remoteList.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+          setBookings(remoteList)
+          saveLocalBookings(remoteList)
+        } else {
+          // If Firestore is completely fresh, seed with default bookings
+          INITIAL_BOOKINGS.forEach((b) => {
+            setDoc(doc(db, 'bookings', b.id), b).catch(() => {})
+          })
+        }
+      },
+      (error) => {
+        logFirestoreError(error, OperationType.GET, 'bookings')
+      }
+    )
+
     return () => {
-      window.removeEventListener(CHANGE_EVENT, handler)
-      window.removeEventListener('storage', handler)
+      window.removeEventListener(CHANGE_EVENT, localHandler)
+      window.removeEventListener('storage', localHandler)
+      unsub()
     }
   }, [])
 

@@ -1,4 +1,12 @@
 import { useEffect, useState } from 'react'
+import {
+  collection,
+  doc,
+  setDoc,
+  deleteDoc,
+  onSnapshot,
+} from 'firebase/firestore'
+import { db, handleFirestoreError, logFirestoreError, OperationType } from '@/lib/firebase'
 import { articles as defaultArticles, type Article } from '@/data/articles'
 
 const STORAGE_KEY = 'garut_journey_articles_v2'
@@ -12,7 +20,6 @@ export function getStoredArticles(): Article[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultArticles))
       return defaultArticles
     }
     const parsed = JSON.parse(raw)
@@ -25,46 +32,55 @@ export function getStoredArticles(): Article[] {
   return defaultArticles
 }
 
+export function saveLocalArticles(articles: Article[]) {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(articles))
+    window.dispatchEvent(new CustomEvent(CHANGE_EVENT, { detail: articles }))
+  } catch (err) {
+    console.error('Failed to save articles to local storage:', err)
+  }
+}
+
 /** Get single article by slug from storage or fallback */
 export function getArticleFromStorage(slug: string): Article | undefined {
   const all = getStoredArticles()
   return all.find((a) => a.slug === slug)
 }
 
-/** Save or update article in localStorage */
-export function saveArticleToStorage(article: Article): boolean {
-  if (typeof window === 'undefined') return false
+/** Save or update article in Firestore and localStorage */
+export async function saveArticleToStorage(article: Article): Promise<boolean> {
+  const current = getStoredArticles()
+  const index = current.findIndex((a) => a.slug === article.slug)
+  let updated: Article[]
+  if (index >= 0) {
+    updated = [...current]
+    updated[index] = { ...article }
+  } else {
+    updated = [{ ...article }, ...current]
+  }
+  saveLocalArticles(updated)
+
   try {
-    const current = getStoredArticles()
-    const index = current.findIndex((a) => a.slug === article.slug)
-    let updated: Article[]
-    if (index >= 0) {
-      updated = [...current]
-      updated[index] = { ...article }
-    } else {
-      // Prepend newest article
-      updated = [{ ...article }, ...current]
-    }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
-    window.dispatchEvent(new CustomEvent(CHANGE_EVENT, { detail: updated }))
+    await setDoc(doc(db, 'articles', article.slug), article)
     return true
   } catch (err) {
-    console.error('Failed to save article:', err)
+    handleFirestoreError(err, OperationType.WRITE, `articles/${article.slug}`)
     return false
   }
 }
 
 /** Delete an article by slug */
-export function deleteArticleFromStorage(slug: string): boolean {
-  if (typeof window === 'undefined') return false
+export async function deleteArticleFromStorage(slug: string): Promise<boolean> {
+  const current = getStoredArticles()
+  const updated = current.filter((a) => a.slug !== slug)
+  saveLocalArticles(updated)
+
   try {
-    const current = getStoredArticles()
-    const updated = current.filter((a) => a.slug !== slug)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
-    window.dispatchEvent(new CustomEvent(CHANGE_EVENT, { detail: updated }))
+    await deleteDoc(doc(db, 'articles', slug))
     return true
   } catch (err) {
-    console.error('Failed to delete article:', err)
+    handleFirestoreError(err, OperationType.DELETE, `articles/${slug}`)
     return false
   }
 }
@@ -72,22 +88,17 @@ export function deleteArticleFromStorage(slug: string): boolean {
 /** Reset articles to initial default dataset */
 export function resetArticlesStorage(): void {
   if (typeof window === 'undefined') return
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultArticles))
-    window.dispatchEvent(new CustomEvent(CHANGE_EVENT, { detail: defaultArticles }))
-  } catch (err) {
-    console.error('Failed to reset articles:', err)
-  }
+  saveLocalArticles(defaultArticles)
 }
 
 /** React hook for live articles state */
 export function useArticles() {
-  const [items, setItems] = useState<Article[]>(defaultArticles)
+  const [items, setItems] = useState<Article[]>(() => getStoredArticles())
   const [isClient, setIsClient] = useState(false)
 
   useEffect(() => {
     setIsClient(true)
-    setItems(getStoredArticles())
+    if (typeof window === 'undefined') return
 
     const handleUpdate = () => {
       setItems(getStoredArticles())
@@ -96,9 +107,25 @@ export function useArticles() {
     window.addEventListener(CHANGE_EVENT, handleUpdate)
     window.addEventListener('storage', handleUpdate)
 
+    const unsub = onSnapshot(
+      collection(db, 'articles'),
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const remoteList: Article[] = []
+          snapshot.forEach((snap) => remoteList.push(snap.data() as Article))
+          setItems(remoteList)
+          saveLocalArticles(remoteList)
+        }
+      },
+      (error) => {
+        logFirestoreError(error, OperationType.GET, 'articles')
+      }
+    )
+
     return () => {
       window.removeEventListener(CHANGE_EVENT, handleUpdate)
       window.removeEventListener('storage', handleUpdate)
+      unsub()
     }
   }, [])
 

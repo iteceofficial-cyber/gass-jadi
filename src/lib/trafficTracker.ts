@@ -3,6 +3,8 @@
  * Tracks client-side pageviews, unique visitors, sessions, referrers, and devices.
  */
 import { useEffect, useState } from 'react'
+import { doc, onSnapshot } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
 
 export interface VisitRecord {
   id: string
@@ -382,10 +384,26 @@ export function useTrafficAnalytics() {
     window.addEventListener(TRAFFIC_EVENT, handleUpdate)
     window.addEventListener('storage', handleUpdate)
 
+    const unsub = onSnapshot(
+      doc(db, 'traffic', 'overview'),
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data() as Partial<TrafficData>
+          setTraffic((prev) => ({
+            ...prev,
+            ...data,
+            lastUpdated: new Date().toISOString(),
+          }))
+        }
+      },
+      () => {}
+    )
+
     return () => {
       clearInterval(interval)
       window.removeEventListener(TRAFFIC_EVENT, handleUpdate)
       window.removeEventListener('storage', handleUpdate)
+      unsub()
     }
   }, [])
 

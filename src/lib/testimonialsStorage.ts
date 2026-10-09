@@ -1,4 +1,12 @@
 import { useEffect, useState } from 'react'
+import {
+  collection,
+  doc,
+  setDoc,
+  deleteDoc,
+  onSnapshot,
+} from 'firebase/firestore'
+import { db, handleFirestoreError, logFirestoreError, OperationType } from '@/lib/firebase'
 import { testimonials as defaultTestimonials, type Testimonial } from '@/data/testimonials'
 
 const STORAGE_KEY = 'gj:testimonials:v1'
@@ -33,17 +41,17 @@ export function getStoredTestimonials(): Testimonial[] {
   }
 }
 
-export function saveStoredTestimonials(list: Testimonial[]) {
+export function saveLocalTestimonials(list: Testimonial[]) {
   if (typeof window === 'undefined') return
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
     window.dispatchEvent(new CustomEvent('gj:testimonials-change'))
   } catch {
-    // ignore quota errors
+    // ignore
   }
 }
 
-export function upsertTestimonial(item: Testimonial): Testimonial[] {
+export async function upsertTestimonial(item: Testimonial): Promise<Testimonial[]> {
   const current = getStoredTestimonials()
   const id = item.id || `rev-${Date.now()}`
   const normalized: Testimonial = {
@@ -54,14 +62,26 @@ export function upsertTestimonial(item: Testimonial): Testimonial[] {
   }
   const idx = current.findIndex((t) => t.id === id)
   const next = idx >= 0 ? current.map((t, i) => (i === idx ? normalized : t)) : [normalized, ...current]
-  saveStoredTestimonials(next)
+  saveLocalTestimonials(next)
+
+  try {
+    await setDoc(doc(db, 'testimonials', id), normalized)
+  } catch (err) {
+    handleFirestoreError(err, OperationType.WRITE, `testimonials/${id}`)
+  }
   return next
 }
 
-export function deleteTestimonial(id: string): Testimonial[] {
+export async function deleteTestimonial(id: string): Promise<Testimonial[]> {
   const current = getStoredTestimonials()
   const next = current.filter((t, idx) => (t.id || `rev-${idx}`) !== id)
-  saveStoredTestimonials(next)
+  saveLocalTestimonials(next)
+
+  try {
+    await deleteDoc(doc(db, 'testimonials', id))
+  } catch (err) {
+    handleFirestoreError(err, OperationType.DELETE, `testimonials/${id}`)
+  }
   return next
 }
 
@@ -74,16 +94,34 @@ export function resetTestimonialsToDefault(): Testimonial[] {
 }
 
 export function useTestimonials(): Testimonial[] {
-  const [list, setList] = useState<Testimonial[]>(defaultTestimonials)
+  const [list, setList] = useState<Testimonial[]>(() => getStoredTestimonials())
 
   useEffect(() => {
+    if (typeof window === 'undefined') return
+
     const sync = () => setList(getStoredTestimonials())
-    sync()
     window.addEventListener('gj:testimonials-change', sync)
     window.addEventListener('storage', sync)
+
+    const unsub = onSnapshot(
+      collection(db, 'testimonials'),
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const remoteList: Testimonial[] = []
+          snapshot.forEach((snap) => remoteList.push(snap.data() as Testimonial))
+          setList(remoteList)
+          saveLocalTestimonials(remoteList)
+        }
+      },
+      (error) => {
+        logFirestoreError(error, OperationType.GET, 'testimonials')
+      }
+    )
+
     return () => {
       window.removeEventListener('gj:testimonials-change', sync)
       window.removeEventListener('storage', sync)
+      unsub()
     }
   }, [])
 

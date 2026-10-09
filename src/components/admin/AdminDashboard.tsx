@@ -38,6 +38,9 @@ import {
   Star,
   Compass,
   Layers,
+  Cloud,
+  Download,
+  FileSpreadsheet,
   Tag,
   Trash2,
   TrendingUp,
@@ -46,10 +49,12 @@ import {
   Zap,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { exportBookingsToExcel, exportBookingsToCSV } from '@/lib/excelExport'
 import { Img } from '@/components/Img'
 import { ToursManager } from '@/components/admin/ToursManager'
 import { ReviewsManager } from '@/components/admin/ReviewsManager'
 import { SectionsManager } from '@/components/admin/SectionsManager'
+import { SeoManager } from '@/components/admin/SeoManager'
 import { type Article, formatDate } from '@/data/articles'
 import { type Category, type Destination } from '@/data/destinations'
 import { useArticles } from '@/lib/articlesStorage'
@@ -179,6 +184,7 @@ export function AdminDashboard() {
     | 'reviews'
     | 'all_sections'
     | 'settings'
+    | 'seo'
     | 'pricing_destinations'
     | 'payments'
     | 'list'
@@ -378,9 +384,9 @@ export function AdminDashboard() {
     setTimeout(() => setSuccessMsg(null), 4000)
   }
 
-  const handleSavePaymentSettings = (e: React.FormEvent) => {
+  const handleSavePaymentSettings = async (e: React.FormEvent) => {
     e.preventDefault()
-    const saved = savePaymentConfig(paySettingsForm)
+    const saved = await savePaymentConfig(paySettingsForm)
     if (saved) {
       notifySuccess('Pengaturan rekening bank, e-wallet, dan QRIS berhasil disimpan dan langsung aktif!')
     } else {
@@ -489,6 +495,33 @@ export function AdminDashboard() {
     return bookings.filter((b) => b.paymentStatus === 'Menunggu Konfirmasi').length
   }, [bookings])
 
+  const handleExportExcelPaid = () => {
+    try {
+      const res = exportBookingsToExcel(bookings, { onlyPaid: true })
+      notifySuccess(`Berhasil mengunduh Laporan Excel (${res.count} data pengunjung yang sudah bayar / lunas)!`)
+    } catch {
+      setErrorMsg('Gagal mengunduh laporan Excel.')
+    }
+  }
+
+  const handleExportExcelAll = () => {
+    try {
+      const res = exportBookingsToExcel(bookings, { onlyPaid: false })
+      notifySuccess(`Berhasil mengunduh Laporan Excel (${res.count} semua data pemesanan)!`)
+    } catch {
+      setErrorMsg('Gagal mengunduh laporan Excel.')
+    }
+  }
+
+  const handleExportCSV = () => {
+    try {
+      exportBookingsToCSV(bookings, { onlyPaid: true })
+      notifySuccess('Berhasil mengunduh Laporan CSV Pengunjung yang sudah bayar!')
+    } catch {
+      setErrorMsg('Gagal mengunduh laporan CSV.')
+    }
+  }
+
   const handleTitleChange = (val: string) => {
     setTitle(val)
     if (!slugManuallyEdited && !editingSlug) {
@@ -567,7 +600,7 @@ export function AdminDashboard() {
     setActiveTab('editor')
   }
 
-  const handleSaveArticle = (e: React.FormEvent) => {
+  const handleSaveArticle = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMsg(null)
 
@@ -606,20 +639,20 @@ export function AdminDashboard() {
       related: relatedDestinations,
     }
 
-    const saved = saveArticle(newArticle)
+    const saved = await saveArticle(newArticle)
     if (saved) {
       notifySuccess(
         editingSlug ? 'Artikel berhasil diperbarui!' : 'Artikel baru berhasil diterbitkan di website!'
       )
       setActiveTab('list')
     } else {
-      setErrorMsg('Gagal menyimpan artikel ke browser storage.')
+      setErrorMsg('Gagal menyimpan artikel ke cloud database.')
     }
   }
 
-  const handleDelete = (slugToDelete: string, articleTitle: string) => {
+  const handleDelete = async (slugToDelete: string, articleTitle: string) => {
     if (window.confirm(`Apakah Anda yakin ingin menghapus artikel "${articleTitle}"?`)) {
-      const deleted = deleteArticle(slugToDelete)
+      const deleted = await deleteArticle(slugToDelete)
       if (deleted) {
         notifySuccess(`Artikel "${articleTitle}" berhasil dihapus.`)
       }
@@ -638,14 +671,14 @@ export function AdminDashboard() {
   }
 
   // Handle Save Website Settings
-  const handleSaveSettings = (e: React.FormEvent) => {
+  const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault()
     const digitsOnly = siteWhatsapp.replace(/\D/g, '')
     const finalDigits = digitsOnly.startsWith('0') ? '62' + digitsOnly.slice(1) : digitsOnly
 
     const finalBg = useCustomHeroBg && customHeroBg.trim() ? customHeroBg.trim() : heroBackground
 
-    const saved = saveSiteSettings({
+    const saved = await saveSiteSettings({
       name: siteName.trim() || initialSiteSettings.name,
       tagline: initialSiteSettings.tagline,
       subtitle: siteSubtitle.trim() || 'Explore Swiss van Java',
@@ -706,16 +739,16 @@ export function AdminDashboard() {
   }
 
   // Handle Save Tour Price
-  const handleSavePrice = (tourName: string) => {
+  const handleSavePrice = async (tourName: string) => {
     const val = priceForm[tourName]
     if (val && val > 0) {
-      updatePrice(tourName, val)
+      await updatePrice(tourName, val)
       notifySuccess(`Harga paket "${tourName}" berhasil diperbarui menjadi ${formatRupiah(val)}!`)
     }
   }
 
   // Handle Save Destination
-  const handleSaveDestination = (e: React.FormEvent) => {
+  const handleSaveDestination = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!destName.trim()) {
       setErrorMsg('Nama destinasi wajib diisi.')
@@ -743,7 +776,7 @@ export function AdminDashboard() {
       nearby: ['mount-papandayan', 'situ-bagendit'],
     }
 
-    saveDestination(newDest)
+    await saveDestination(newDest)
     notifySuccess(`Destinasi "${destName}" berhasil disimpan ke website!`)
 
     // Reset dest form
@@ -770,21 +803,21 @@ export function AdminDashboard() {
     setDestFacilities(dest.facilities ? dest.facilities.join(', ') : '')
   }
 
-  const handleDeleteDest = (slugToDelete: string, name: string) => {
+  const handleDeleteDest = async (slugToDelete: string, name: string) => {
     if (window.confirm(`Hapus destinasi "${name}"?`)) {
-      removeDestination(slugToDelete)
+      await removeDestination(slugToDelete)
       notifySuccess(`Destinasi "${name}" berhasil dihapus.`)
     }
   }
 
-  const handleStatusChange = (bookingId: string, newStatus: PaymentStatus) => {
-    updateStatus(bookingId, newStatus)
+  const handleStatusChange = async (bookingId: string, newStatus: PaymentStatus) => {
+    await updateStatus(bookingId, newStatus)
     notifySuccess(`Status booking ${bookingId} berhasil diubah ke "${newStatus}".`)
   }
 
-  const handleDeleteBooking = (bookingId: string) => {
+  const handleDeleteBooking = async (bookingId: string) => {
     if (window.confirm(`Hapus data booking ${bookingId}?`)) {
-      removeBooking(bookingId)
+      await removeBooking(bookingId)
       notifySuccess(`Data booking ${bookingId} berhasil dihapus.`)
       if (selectedBookingDetail?.id === bookingId) {
         setSelectedBookingDetail(null)
@@ -1038,6 +1071,17 @@ Tim kami siap menyambut kedatangan Anda di Garut! Ada hal yang ingin dipersiapka
 
             <button
               type="button"
+              onClick={() => setActiveTab('seo')}
+              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition flex items-center gap-1.5 shrink-0 ${
+                activeTab === 'seo' ? 'bg-forest text-white' : 'bg-ink/5 text-ink/75 hover:bg-ink/10'
+              }`}
+            >
+              <Globe2 className="h-3.5 w-3.5 text-emerald-400" />
+              <span>Optimasi SEO</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => setActiveTab('pricing_destinations')}
               className={`rounded-full px-3 py-1.5 text-xs font-semibold transition flex items-center gap-1.5 shrink-0 ${
                 activeTab === 'pricing_destinations' ? 'bg-forest text-white' : 'bg-ink/5 text-ink/75 hover:bg-ink/10'
@@ -1132,6 +1176,8 @@ Tim kami siap menyambut kedatangan Anda di Garut! Ada hal yang ingin dipersiapka
                   ? 'Kelola Kuliner, Galeri Foto, Pengalaman & Banner'
                   : activeTab === 'settings'
                   ? 'Pengaturan & Edit Seluruh Bagian Website'
+                  : activeTab === 'seo'
+                  ? 'Optimasi SEO & Peringkat Google Mesin Pencari'
                   : activeTab === 'payments'
                   ? 'Pengaturan Rekening Bank, E-Wallet & QRIS'
                   : activeTab === 'pricing_destinations'
@@ -1147,10 +1193,14 @@ Tim kami siap menyambut kedatangan Anda di Garut! Ada hal yang ingin dipersiapka
             </div>
 
             {activeTab === 'bookings' && (
-              <div className="flex items-center gap-2">
-                <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800 flex items-center gap-1.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-emerald-100 text-emerald-800 px-3 py-1 text-xs font-bold flex items-center gap-1.5 border border-emerald-300">
+                  <Cloud className="h-3.5 w-3.5 text-emerald-600" />
+                  <span>Database Cloud Aktif (Tersimpan Permanen)</span>
+                </span>
+                <span className="rounded-full bg-forest/10 text-forest px-3 py-1 text-xs font-bold flex items-center gap-1.5">
                   <CheckCircle2 className="h-3.5 w-3.5" />
-                  <span>Kalender & Jam Meeting Terintegrasi</span>
+                  <span>Real-Time Sync Multi-Device</span>
                 </span>
               </div>
             )}
@@ -1205,6 +1255,62 @@ Tim kami siap menyambut kedatangan Anda di Garut! Ada hal yang ingin dipersiapka
         {/* ======================================= */}
         {activeTab === 'bookings' && (
           <div className="space-y-6">
+            {/* Laporan Pengunjung & Export Excel Toolbar */}
+            <div className="rounded-3xl bg-gradient-to-r from-forest/95 via-forest to-forest-700 p-6 text-cream shadow-lift relative overflow-hidden">
+              <div className="absolute right-0 top-0 -mt-6 -mr-6 w-48 h-48 bg-white/5 rounded-full blur-2xl pointer-events-none" />
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-full bg-ember/20 text-ember-300 px-2.5 py-0.5 text-[0.7rem] font-bold uppercase tracking-wider border border-ember/30">
+                      Laporan Keuangan & Pengunjung
+                    </span>
+                    <span className="text-xs text-cream/70 flex items-center gap-1">
+                      <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-300" />
+                      Format Microsoft Excel (.xlsx) & CSV
+                    </span>
+                  </div>
+                  <h3 className="font-display text-xl sm:text-2xl font-bold mt-1 text-white">
+                    Ekspor Laporan Pengunjung & Pembayaran
+                  </h3>
+                  <p className="text-xs sm:text-sm text-cream/80 max-w-xl mt-1">
+                    Unduh rekapitulasi data pengunjung yang telah melakukan pembayaran lunas lengkap dengan rincian nama, kontak WA, paket tour, tanggal kedatangan, meeting point, dan total nominal transaksi.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleExportExcelPaid}
+                    className="inline-flex items-center gap-2 rounded-2xl bg-emerald-400 hover:bg-emerald-300 text-forest-700 font-bold px-4 py-3 text-xs sm:text-sm transition shadow-md hover:scale-[1.02] active:scale-[0.98]"
+                    title="Unduh file Excel pengunjung yang sudah lunas/bayar"
+                  >
+                    <FileSpreadsheet className="h-4 w-4 text-forest-700" />
+                    <span>Export Excel (Pengunjung Lunas)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleExportExcelAll}
+                    className="inline-flex items-center gap-2 rounded-2xl bg-white/10 hover:bg-white/20 text-cream font-semibold px-3.5 py-3 text-xs sm:text-sm transition border border-white/15"
+                    title="Unduh seluruh data booking dalam file Excel"
+                  >
+                    <Download className="h-4 w-4" />
+                    <span>Semua Booking (.xlsx)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleExportCSV}
+                    className="inline-flex items-center gap-2 rounded-2xl bg-white/10 hover:bg-white/20 text-cream font-semibold px-3.5 py-3 text-xs sm:text-sm transition border border-white/15"
+                    title="Unduh data dalam format CSV standar"
+                  >
+                    <Download className="h-4 w-4" />
+                    <span>CSV</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
             {/* Search & Status Filters */}
             <div className="flex flex-col sm:flex-row gap-4 justify-between items-stretch sm:items-center rounded-2xl bg-white p-4 shadow-soft border border-ink/5">
               <div className="relative flex-1 max-w-md">
@@ -3920,6 +4026,15 @@ Tim kami siap menyambut kedatangan Anda di Garut! Ada hal yang ingin dipersiapka
                 </button>
               </div>
             </form>
+          </div>
+        )}
+
+        {/* ======================================= */}
+        {/* TAB: OPTIMASI SEO & GOOGLE RANKING     */}
+        {/* ======================================= */}
+        {activeTab === 'seo' && (
+          <div className="max-w-5xl mx-auto animate-fade-in">
+            <SeoManager onNotify={notifySuccess} />
           </div>
         )}
 

@@ -8,6 +8,7 @@ import { img } from '@/lib/img'
 import { useLanguage } from '@/lib/i18n'
 import { trackPageView } from '@/lib/trafficTracker'
 import { scrollToSection } from '@/lib/nav'
+import { useSeoSettings } from '@/lib/seoSettings'
 
 import '../styles.css'
 
@@ -84,10 +85,80 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     Boolean(isBrowserAdmin)
   const { lang, isRtl } = useLanguage()
 
+  const { seo } = useSeoSettings()
+
   // Track page views for WP Admin Traffic Analytics
   useEffect(() => {
     trackPageView(pathname)
   }, [pathname])
+
+  // Dynamically synchronize SEO metadata & Schema.org JSON-LD from database
+  useEffect(() => {
+    if (typeof document === 'undefined' || isAdminPage) return
+
+    if (seo.metaTitle) {
+      document.title = seo.metaTitle
+    }
+
+    const setMeta = (nameOrProperty: string, content: string, isProperty = false) => {
+      if (!content) return
+      const selector = isProperty
+        ? `meta[property="${nameOrProperty}"]`
+        : `meta[name="${nameOrProperty}"]`
+      let el = document.querySelector(selector) as HTMLMetaElement | null
+      if (!el) {
+        el = document.createElement('meta')
+        if (isProperty) el.setAttribute('property', nameOrProperty)
+        else el.setAttribute('name', nameOrProperty)
+        document.head.appendChild(el)
+      }
+      el.setAttribute('content', content)
+    }
+
+    setMeta('description', seo.metaDescription)
+    setMeta('keywords', seo.focusKeywords)
+    setMeta('author', seo.author)
+    setMeta('robots', `${seo.robotsIndex ? 'index' : 'noindex'}, ${seo.robotsFollow ? 'follow' : 'nofollow'}`)
+    setMeta('og:title', seo.ogTitle || seo.metaTitle, true)
+    setMeta('og:description', seo.ogDescription || seo.metaDescription, true)
+    setMeta('og:image', img(seo.ogImage || 'hero.png', 1200), true)
+    setMeta('twitter:title', seo.ogTitle || seo.metaTitle)
+    setMeta('twitter:description', seo.ogDescription || seo.metaDescription)
+    setMeta('twitter:image', img(seo.ogImage || 'hero.png', 1200))
+
+    if (seo.canonicalUrl) {
+      let canonicalEl = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null
+      if (!canonicalEl) {
+        canonicalEl = document.createElement('link')
+        canonicalEl.setAttribute('rel', 'canonical')
+        document.head.appendChild(canonicalEl)
+      }
+      canonicalEl.setAttribute('href', seo.canonicalUrl)
+    }
+
+    let schemaScript = document.getElementById('garut-schema-jsonld') as HTMLScriptElement | null
+    if (!schemaScript) {
+      schemaScript = document.createElement('script')
+      schemaScript.id = 'garut-schema-jsonld'
+      schemaScript.type = 'application/ld+json'
+      document.head.appendChild(schemaScript)
+    }
+    schemaScript.text = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': seo.schemaType || 'TravelAgency',
+      name: 'Garut Journey',
+      url: seo.canonicalUrl || 'https://garutjourney.com',
+      description: seo.metaDescription,
+      telephone: seo.schemaTelephone,
+      priceRange: seo.schemaPriceRange,
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: seo.schemaAddressLocality || 'Garut',
+        addressRegion: seo.schemaAddressRegion || 'Jawa Barat',
+        addressCountry: seo.schemaAddressCountry || 'ID',
+      },
+    })
+  }, [seo, isAdminPage])
 
   // Smooth scroll to hash on initial load or route transition (e.g. from /destinations/... to /#destinations)
   useEffect(() => {
