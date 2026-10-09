@@ -107,8 +107,9 @@ export function ItineraryBuilder() {
     isLongTrip ? ` · Transport: ${customTransport} · Stay: ${customStay}` : ''
   }`
 
-  const build = () => {
-    const p = buildItinerary(duration, style, budget, travelers)
+  const build = (customDuration?: Duration) => {
+    const durToUse = customDuration ?? duration
+    const p = buildItinerary(durToUse, style, budget, travelers)
     setPlan(p)
     requestAnimationFrame(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
   }
@@ -160,7 +161,7 @@ Mohon info penawaran resmi dan penyesuaian jadwalnya. Terima kasih!`
                   type="button"
                   onClick={() => {
                     setDuration(4)
-                    build()
+                    build(4)
                   }}
                   className="rounded-full bg-ember px-3.5 py-1.5 text-xs font-bold text-white shadow-soft hover:bg-ember-600 transition"
                 >
@@ -170,7 +171,7 @@ Mohon info penawaran resmi dan penyesuaian jadwalnya. Terima kasih!`
                   type="button"
                   onClick={() => {
                     setDuration(5)
-                    build()
+                    build(5)
                   }}
                   className="rounded-full bg-white/15 px-3.5 py-1.5 text-xs font-semibold text-cream hover:bg-white/25 transition"
                 >
@@ -180,7 +181,7 @@ Mohon info penawaran resmi dan penyesuaian jadwalnya. Terima kasih!`
                   type="button"
                   onClick={() => {
                     setDuration(7)
-                    build()
+                    build(7)
                   }}
                   className="rounded-full bg-white/15 px-3.5 py-1.5 text-xs font-semibold text-cream hover:bg-white/25 transition"
                 >

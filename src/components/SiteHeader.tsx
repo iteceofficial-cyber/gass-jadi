@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { Globe, Menu, X } from 'lucide-react'
+import { ChevronDown, Globe, Menu, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { navLinks } from '@/data/site'
 import { BookLink, btn } from './BookLink'
@@ -102,6 +102,72 @@ function LanguageSelector({ solid }: { solid: boolean }) {
   )
 }
 
+function MoreDropdown({ solid }: { solid: boolean }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const { t } = useLanguage()
+
+  useEffect(() => {
+    const handleOutside = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleOutside)
+    return () => document.removeEventListener('mousedown', handleOutside)
+  }, [])
+
+  const moreLinks = [
+    { label: 'Team Guide', hash: 'team' },
+    { label: 'Tentang Kami', hash: 'company-profile' },
+    { label: 'Gallery', hash: 'gallery' },
+    { label: 'Reviews', hash: 'testimonials' },
+    { label: 'Contact', hash: 'contact' },
+  ]
+
+  return (
+    <div ref={ref} className="relative shrink-0">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        aria-label="Menu lainnya"
+        className={`whitespace-nowrap rounded-full px-2.5 2xl:px-3 py-1.5 text-[0.78rem] 2xl:text-[0.82rem] font-medium transition inline-flex items-center gap-1 ${
+          solid
+            ? 'text-ink/80 hover:bg-forest/10 hover:text-forest'
+            : 'text-cream/90 hover:bg-white/15 hover:text-white'
+        }`}
+      >
+        <span>{t.nav?.more || 'Lainnya'}</span>
+        <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 mt-2 w-48 rounded-2xl bg-white p-2 shadow-2xl ring-1 ring-ink/10 z-50 animate-fade-in text-ink">
+          {moreLinks.map((l) => {
+            const labelText = getTranslatedLabel(l.label, t)
+            return (
+              <Link
+                key={l.label}
+                to="/"
+                hash={l.hash}
+                onClick={() => {
+                  setOpen(false)
+                  handleNavClick(l.hash)
+                }}
+                className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-ink/80 hover:bg-cream/70 hover:text-forest transition"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-forest/40 shrink-0" />
+                <span>{labelText}</span>
+              </Link>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 /** Sticky navigation with dynamic language, animation and mobile drawer. */
 export function SiteHeader({ overHero = false }: { overHero?: boolean }) {
   if (typeof window !== 'undefined') {
@@ -168,7 +234,7 @@ export function SiteHeader({ overHero = false }: { overHero?: boolean }) {
             <Logo light={!solid} />
           </Link>
 
-          <nav aria-label="Main" className="hidden xl:flex xl:items-center xl:justify-center flex-1 min-w-0 px-2">
+          <nav aria-label="Main" className="hidden lg:flex lg:items-center lg:justify-center flex-1 min-w-0 px-2">
             <ul
               className={`flex items-center gap-0.5 2xl:gap-1 rounded-full px-2 py-1 transition ${
                 solid
@@ -176,37 +242,35 @@ export function SiteHeader({ overHero = false }: { overHero?: boolean }) {
                   : 'bg-black/20 backdrop-blur-md ring-1 ring-white/15'
               }`}
             >
-              {navLinks.map((l) => {
+              {[
+                { label: 'Destinations', hash: 'destinations' },
+                { label: 'City Tours', hash: 'city-tours' },
+                { label: 'Culinary', hash: 'culinary' },
+                { label: 'Itinerary', hash: 'itinerary' },
+                { label: 'Travel Guide', hash: 'guide' },
+              ].map((l) => {
                 const labelText = getTranslatedLabel(l.label, t)
                 return (
                   <li key={l.label} className="shrink-0">
-                    {l.to ? (
-                      <Link
-                        to={l.to}
-                        className={`whitespace-nowrap rounded-full px-2.5 2xl:px-3 py-1.5 text-[0.78rem] 2xl:text-[0.82rem] font-semibold transition inline-flex items-center gap-1.5 ${
-                          solid ? 'text-forest hover:bg-forest/10' : 'text-ember hover:bg-white/10'
-                        }`}
-                      >
-                        <span className="h-1.5 w-1.5 rounded-full bg-ember shrink-0" />
-                        <span>{labelText}</span>
-                      </Link>
-                    ) : (
-                      <Link
-                        to="/"
-                        hash={l.hash}
-                        onClick={() => handleNavClick(l.hash)}
-                        className={`whitespace-nowrap block rounded-full px-2.5 2xl:px-3 py-1.5 text-[0.78rem] 2xl:text-[0.82rem] font-medium transition ${
-                          solid
-                            ? 'text-ink/80 hover:bg-forest/10 hover:text-forest'
-                            : 'text-cream/90 hover:bg-white/15 hover:text-white'
-                        }`}
-                      >
-                        {labelText}
-                      </Link>
-                    )}
+                    <Link
+                      to="/"
+                      hash={l.hash}
+                      onClick={() => handleNavClick(l.hash)}
+                      className={`whitespace-nowrap block rounded-full px-2.5 2xl:px-3 py-1.5 text-[0.78rem] 2xl:text-[0.82rem] font-medium transition ${
+                        solid
+                          ? 'text-ink/80 hover:bg-forest/10 hover:text-forest'
+                          : 'text-cream/90 hover:bg-white/15 hover:text-white'
+                      }`}
+                    >
+                      {labelText}
+                    </Link>
                   </li>
                 )
               })}
+              {/* More dropdown for secondary links */}
+              <li>
+                <MoreDropdown solid={solid} />
+              </li>
             </ul>
           </nav>
 
@@ -224,7 +288,7 @@ export function SiteHeader({ overHero = false }: { overHero?: boolean }) {
               aria-label="Open menu"
               aria-expanded={open}
               aria-controls="mobile-nav"
-              className={`rounded-full p-2.5 transition xl:hidden ${
+              className={`rounded-full p-2.5 transition lg:hidden ${
                 solid ? 'text-ink hover:bg-ink/5' : 'text-cream hover:bg-white/10'
               }`}
             >
@@ -240,7 +304,7 @@ export function SiteHeader({ overHero = false }: { overHero?: boolean }) {
         role="dialog"
         aria-modal="true"
         aria-label="Menu"
-        className={`fixed inset-0 z-[60] overflow-y-auto bg-forest text-cream transition-[clip-path] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] xl:hidden ${
+        className={`fixed inset-0 z-[60] overflow-y-auto bg-forest text-cream transition-[clip-path] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] lg:hidden ${
           open ? '[clip-path:circle(150%_at_100%_0)]' : 'pointer-events-none [clip-path:circle(0%_at_100%_0)]'
         }`}
       >

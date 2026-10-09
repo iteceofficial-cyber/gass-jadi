@@ -2,7 +2,10 @@ export const DEFAULT_FALLBACK_IMAGE = '/img/hero.png'
 
 /** Inline SVG placeholder in case no image can be loaded */
 export const SVG_FALLBACK_PLACEHOLDER =
-  'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600" fill="%231F5D42"><rect width="800" height="600" fill="%2317231D"/><path d="M120 480L340 260L460 380L580 220L720 480Z" fill="%231F5D42" opacity="0.6"/><circle cx="280" cy="180" r="40" fill="%23D8893B"/><text x="400" y="520" font-family="sans-serif" font-size="20" fill="%23F5EFE3" opacity="0.7" text-anchor="middle">Garut Journey</text></svg>'
+  'data:image/svg+xml;charset=utf-8,' +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600"><rect width="800" height="600" fill="#17231D"/><path d="M120 480L340 260L460 380L580 220L720 480Z" fill="#1F5D42" opacity="0.6"/><circle cx="280" cy="180" r="40" fill="#D8893B"/><text x="400" y="520" font-family="sans-serif" font-size="20" fill="#F5EFE3" opacity="0.7" text-anchor="middle">Garut Journey</text></svg>'
+  )
 
 /**
  * Serve images from /img directory, external URLs, or uploaded data URLs safely.

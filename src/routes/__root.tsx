@@ -181,13 +181,15 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     }
   }, [pathname])
 
+  const isHomePage = pathname === '/'
+
   return (
     <html lang={lang} dir={isRtl ? 'rtl' : 'ltr'}>
       <head>
         <HeadContent />
       </head>
       <body id="top">
-        {!isAdminPage && <SiteHeader overHero />}
+        {!isAdminPage && <SiteHeader overHero={isHomePage} />}
         <main id="main">{children}</main>
         {!isAdminPage && <SiteFooter />}
         {!isAdminPage && <WhatsAppFab />}
