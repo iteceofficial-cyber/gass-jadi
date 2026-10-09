@@ -8,6 +8,7 @@ import {
   Check,
   CheckCircle2,
   Clock,
+  Copy,
   CreditCard,
   DollarSign,
   Edit3,
@@ -819,6 +820,18 @@ export function AdminDashboard() {
   const handleStatusChange = async (bookingId: string, newStatus: PaymentStatus) => {
     await updateStatus(bookingId, newStatus)
     notifySuccess(`Status booking ${bookingId} berhasil diubah ke "${newStatus}".`)
+    if (newStatus === 'Lunas' || newStatus === 'Selesai') {
+      const b = bookings.find((item) => item.id === bookingId)
+      if (b) {
+        sendKwitansiViaWhatsApp({ ...b, paymentStatus: newStatus })
+      }
+    }
+  }
+
+  const copyKwitansiLink = (bookingId: string) => {
+    const kwitansiUrl = `${window.location.origin}/kwitansi/${bookingId}`
+    navigator.clipboard.writeText(kwitansiUrl)
+    notifySuccess(`Link download kwitansi #${bookingId} disalin! (Client dapat buka & unduh tanpa perlu login)`)
   }
 
   const handleDeleteBooking = async (bookingId: string) => {
@@ -856,17 +869,20 @@ Tim kami siap menyambut kedatangan Anda di Garut! Ada hal yang ingin dipersiapka
     document.body.removeChild(waLink)
   }
 
-  // Send official Kwitansi PDF download link to client via WhatsApp
+  // Send official Kwitansi PDF download link to client via WhatsApp (No client login required)
   const sendKwitansiViaWhatsApp = (b: Booking) => {
     const rawNumber = b.whatsapp.replace(/\D/g, '')
     const phone = rawNumber.startsWith('0') ? '62' + rawNumber.slice(1) : rawNumber
     const kwitansiUrl = `${window.location.origin}/kwitansi/${b.id}`
-    const text = `Halo Kak ${b.fullName}, terima kasih! Pembayaran Anda sebesar ${formatRupiah(b.totalPrice)} untuk paket "${b.packageOrTour}" telah kami konfirmasi LUNAS.
+    const text = `Halo Kak ${b.fullName}, terima kasih! Pembayaran Anda sebesar ${formatRupiah(b.totalPrice)} untuk paket "${b.packageOrTour}" telah kami konfirmasi LUNAS. ✅
 
-Silakan unduh atau cetak file Kwitansi Resmi Bukti Pembayaran Lunas (PDF) Anda melalui tautan resmi Garut Journey berikut:
+Berikut adalah tautan resmi Kwitansi Bukti Pembayaran Lunas (PDF) Anda:
 ${kwitansiUrl}
 
-Kwitansi ini dapat Anda simpan atau unduh langsung sebagai file PDF tanpa perlu login. Simpan untuk ditunjukkan kepada tour guide / driver kami saat di meeting point. Sampai jumpa di Garut!
+📄 Catatan Penting:
+Kwitansi ini dapat langsung dibuka dan diunduh (PDF) melalui link di atas tanpa perlu login ke sistem. Simpan bukti ini untuk ditunjukkan kepada tour guide / driver kami saat penjemputan di meeting point (${b.meetingPoint || 'Garut'}).
+
+Sampai jumpa di Garut!
 
 Salam hangat,
 Tim Garut Journey`
@@ -878,7 +894,7 @@ Tim Garut Journey`
     document.body.appendChild(waLink)
     waLink.click()
     document.body.removeChild(waLink)
-    notifySuccess(`Link kwitansi resmi ${b.id} dikirim via WhatsApp!`)
+    notifySuccess(`Link download kwitansi #${b.id} dikirim ke WhatsApp client!`)
   }
 
   // ==========================================
@@ -1505,6 +1521,16 @@ Tim Garut Journey`
                           <FileText className="h-3.5 w-3.5" />
                           <span>Kwitansi PDF</span>
                         </a>
+
+                        <button
+                          type="button"
+                          onClick={() => copyKwitansiLink(b.id)}
+                          className="inline-flex items-center gap-1 rounded-xl bg-ink/5 px-2.5 py-1.5 text-xs font-bold text-ink hover:bg-forest hover:text-white transition shadow-sm"
+                          title="Salin link download kwitansi client (dapat dibuka tanpa login)"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                          <span>Salin Link</span>
+                        </button>
 
                         <button
                           type="button"
@@ -4290,6 +4316,16 @@ Tim Garut Journey`
                   <FileText className="h-4 w-4" />
                   <span>Buka Kwitansi PDF</span>
                 </a>
+
+                <button
+                  type="button"
+                  onClick={() => copyKwitansiLink(selectedBookingDetail.id)}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-white border border-ink/20 py-2.5 px-3.5 text-xs font-bold text-ink hover:bg-cream-200 transition"
+                  title="Salin link resmi kwitansi (dapat dibuka tanpa login)"
+                >
+                  <Copy className="h-4 w-4" />
+                  <span>Salin Link Kwitansi</span>
+                </button>
 
                 <button
                   type="button"

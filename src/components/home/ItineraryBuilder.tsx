@@ -305,7 +305,7 @@ Mohon info penawaran resmi dan penyesuaian jadwalnya. Terima kasih!`
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                <button type="button" onClick={build} className={`${btn.primary} flex-1 !py-3.5 text-sm sm:text-base`}>
+                <button type="button" onClick={() => build()} className={`${btn.primary} flex-1 !py-3.5 text-sm sm:text-base`}>
                   <Sparkles className="h-5 w-5" /> Buat Rencana Perjalanan
                 </button>
                 {isLongTrip && (

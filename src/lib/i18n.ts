@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-export type LanguageCode = 'id' | 'en' | 'ja' | 'ar'
+export type LanguageCode = 'id' | 'en' | 'zh' | 'ja' | 'ar'
 
 export interface LanguageOption {
   code: LanguageCode
@@ -12,6 +12,7 @@ export interface LanguageOption {
 export const SUPPORTED_LANGUAGES: LanguageOption[] = [
   { code: 'id', label: 'Indonesia', flag: '🇮🇩', dir: 'ltr' },
   { code: 'en', label: 'English', flag: '🇬🇧', dir: 'ltr' },
+  { code: 'zh', label: '中文 (Mandarin)', flag: '🇨🇳', dir: 'ltr' },
   { code: 'ja', label: '日本語', flag: '🇯🇵', dir: 'ltr' },
   { code: 'ar', label: 'العربية', flag: '🇸🇦', dir: 'rtl' },
 ]
@@ -29,6 +30,7 @@ export const translations = {
       travelGuide: 'Panduan Wisata',
       contact: 'Kontak & Booking',
       bookTour: 'Pesan Sekarang',
+      more: 'Lainnya',
     },
     hero: {
       eyebrow: 'Swiss van Java • Jawa Barat',
@@ -235,6 +237,7 @@ export const translations = {
       travelGuide: 'Travel Guide',
       contact: 'Contact & Booking',
       bookTour: 'Book Your Tour',
+      more: 'More',
     },
     hero: {
       eyebrow: 'The Swiss of Java • West Java',
@@ -441,6 +444,7 @@ export const translations = {
       travelGuide: '旅行ガイド',
       contact: 'お問い合わせ',
       bookTour: '今すぐ予約',
+      more: 'その他',
     },
     hero: {
       eyebrow: 'ジャワのスイス • ガルット高原',
@@ -647,6 +651,7 @@ export const translations = {
       travelGuide: 'دليل السفر',
       contact: 'الاتصال والحجز',
       bookTour: 'احجز جولتك الآن',
+      more: 'المزيد',
     },
     hero: {
       eyebrow: 'سويسرا جاوة • جاوة الغربية',
@@ -840,6 +845,224 @@ export const translations = {
       share: 'مشاركة',
     },
   },
+
+  zh: {
+    nav: {
+      home: '首页',
+      destinations: '精选景点',
+      cityTours: '旅游套餐',
+      culinary: '地道美食',
+      itinerary: '行程规划',
+      gallery: '风景图库',
+      loginAdmin: '管理员登录',
+      travelGuide: '旅行指南',
+      contact: '联系与预订',
+      bookTour: '立即预订',
+      more: '更多',
+    },
+    hero: {
+      eyebrow: '爪哇的瑞士 • 西爪哇',
+      titleLine1: '探索迷人风光与秘境',
+      titleHighlight: '加鲁特 (Garut)',
+      titleLine2: '爪哇小瑞士',
+      desc: '与 Garut Journey 一起探寻活跃火山口、神秘高山湖泊、天然温泉与南部壮丽海岸线。',
+      ctaPrimary: '查看旅游套餐',
+      ctaSecondary: '定制专属行程',
+      stat1Label: '精选目的地',
+      stat2Label: '游客满意度',
+      stat3Label: '持证本地导游',
+      searchPlaceholder: '搜索景点、特色美食、帕潘达扬火山徒步...',
+      searchClear: '清除',
+    },
+    whyGarut: {
+      eyebrow: '01 — 为什么选择加鲁特',
+      title: '加鲁特不仅是一个目的地，',
+      titleHighlight: '更是充满诗意的故事。',
+      intro: '这里汇聚了宏伟的火山风光、深厚的巽他传统文化、淳朴热情的居民与令人难忘的美食记忆。',
+      f1Title: '令人屏息的自然奇观',
+      f1Desc: '探索帕潘达扬活火山口、神秘巴根迪特湖、达拉加特天然温泉以及印度洋南岸壮美沙滩。',
+      f2Title: '传统风味的美食天堂',
+      f2Desc: '品尝爽口辛辣的巴索阿奇（Baso Aci）、甜蜜浓郁的布拉约特（Burayot）、传统多多尔糖与巽他竹筒饭。',
+      f3Title: '历史遗迹与非遗工艺',
+      f3Desc: '探访8世纪坎宽古寺（Candi Cangkuang）、享誉世界的苏卡雷冈皮革工艺与世代相传的文化传统。',
+      f4Title: '真挚的地道深度体验',
+      f4Desc: '与友善淳朴的当地人互动，跟随 Garut Journey 体验超越常规旅游景点的真实加鲁特。',
+    },
+    destinations: {
+      eyebrow: '02 — 精选景点',
+      title: '加鲁特热门旅游胜地',
+      intro: '活火山口、宁静高山湖泊、惬意硫磺温泉与壮阔蔚蓝海岸。',
+      exploreCard: '查看景点详情',
+      catAll: '所有分类',
+    },
+    cityTours: {
+      eyebrow: '03 — 经典体验',
+      title: '开启探索之旅',
+      titleHighlight: 'Garut Journey',
+      intro: '通过精心策划的特色城市旅游线路，深入感受加鲁特的自然魅力与人文底蕴。',
+      signatureTour: '招牌经典套餐',
+      viewItinerary: '查看每日日程',
+      hideItinerary: '收起日程',
+      bookThisTour: '预订此套餐',
+      explorePackage: '查看套餐详情',
+      priceFrom: '起步价格',
+    },
+    experience: {
+      eyebrow: '04 — 探索主题',
+      title: '选择属于您的旅行方式',
+      intro: '从火山口探险徒步到湖畔度假胜地、天然硫磺温泉疗养到巽他美食文化巡礼。',
+      recommendedTours: '推荐精选旅游套餐',
+    },
+    culinary: {
+      eyebrow: '05 — 地道美食',
+      title: '加鲁特特色舌尖风味',
+      intro: '品尝鲜香微辣的木薯丸子汤、传统的棕榈糖糕饼以及湖畔丰盛的巽他手抓饭。',
+      discoverFood: '了解此美食',
+      exploreAllFood: '阅读完整加鲁特美食攻略',
+      priceRange: '价格区间',
+      whereToFind: '推荐品尝地',
+    },
+    itinerary: {
+      eyebrow: '06 — 智能行程',
+      title: '定制您的专属行程',
+      intro: '根据您的出行天数、旅行风格、预算以及人数，瞬间生成完美的加鲁特行程规划。',
+      durationLabel: '行程天数',
+      styleLabel: '旅行风格偏好',
+      budgetLabel: '预算层级',
+      travelersLabel: '人',
+      dayFormat: '天',
+      daysFormat: '天',
+      savedPlacesTitle: '已收藏的景点',
+      savedPlacesDesc: '这些地点已自动加入您的行程规划中。',
+      bookCustom: '立即预订此定制行程',
+      dayHeading: '第',
+    },
+    packages: {
+      eyebrow: '07 — 热门套餐',
+      title: '全包式尊享旅游套餐',
+      intro: '包含专属交通、官方持证导游、特色门票与餐饮，让您出行无忧。',
+      anyLength: '所有天数',
+      oneDay: '1 天',
+      twoDays: '2 天',
+      threeDays: '3 天',
+      mostLoved: '最受欢迎',
+      activitiesLabel: '体验活动',
+      includedLabel: '费用包含',
+      bookBtn: '预订套餐',
+      requestCustom: '咨询定制专属套餐',
+    },
+    gallery: {
+      eyebrow: '08 — 视觉画廊',
+      title: '光影记录中的加鲁特',
+      intro: '壮阔自然风光、丰富巽他文化与难忘的加鲁特冒险时刻。',
+      consultWhatsApp: '在 WhatsApp 咨询此打卡点',
+      closeModal: '关闭图片',
+    },
+    story: {
+      eyebrow: '09 — 品牌故事',
+      title: '关于 Garut Journey 的初心',
+      quote: '加鲁特不仅是一个中转站，更是等待您用心感受与珍藏的诗意故事。',
+      badge: '了解 Garut Journey',
+      p1: '清晨微风轻抚山间梯田，薄雾轻笼的高山湖泊映衬出宁静祥和，整座山谷仿佛都在邀您放慢脚步，沉醉于大自然的纯净诗意。',
+      p2: '而最令旅人留恋的，是这里人们温暖真挚的笑容。摊主热情递上的热腾腾糕点、皮革工匠自豪展现的精湛技艺，无不令人动容。',
+      p3: '我们创办 Garut Journey，旨在带您体验最真实、深情而充满温情的加鲁特，为您留下值得一生珍藏的美好回忆。',
+      welcome: '— Wilujeng sumping. 欢迎来到 Garut Journey。',
+    },
+    testimonials: {
+      eyebrow: '10 — 旅客好评',
+      title: '来自探索者的真实评价',
+      intro: '聆听与 Garut Journey 一起同行的游客所分享的难忘旅行瞬间。',
+    },
+    guide: {
+      eyebrow: '11 — 实用指南',
+      title: '加鲁特深度旅行指南',
+      intro: '最全路线指南、省钱攻略、拍照机位与地道美食测评，均由本地向导倾心撰写。',
+      featured: '精选推荐',
+      readMore: '阅读全文',
+      adminCmsBtn: '管理员仪表板与内容管理',
+    },
+    readyBanner: {
+      eyebrow: '开启旅程',
+      title: '准备好探索加鲁特的魅力了吗？',
+      subtitle: '挑选您的心仪目的地，让 Garut Journey 为您打造难忘的度假体验。',
+      bookBtn: '立即预订旅游套餐',
+      chatBtn: 'WhatsApp 在线咨询',
+    },
+    booking: {
+      title: '规划您的美好旅程',
+      subtitle: '填写预订表格，即刻享受 Garut Journey 贴心服务与确认',
+      fullName: '预订人全名',
+      email: '电子邮箱地址',
+      whatsapp: '有效 WhatsApp 号码',
+      tourPackage: '选择旅游套餐',
+      arrivalDate: '抵达加鲁特日期',
+      meetingTime: '集合时间',
+      meetingPoint: '集合地点 (Meeting Point)',
+      travelers: '出行人数 (人)',
+      notes: '特殊要求 / 接送备注',
+      notesPlaceholder: '例如：我们早上 08:30 抵达加鲁特火车站，需要车辆接送...',
+      submit: '继续支付并确认预订',
+    },
+    payment: {
+      title: '支付指引与凭证确认',
+      subtitle: '完成定金或全款支付以锁定您在 Garut Journey 的行程席位。',
+      totalAmount: '应付总金额',
+      selectMethod: '选择支付方式',
+      qrisTitle: 'QRIS（支持所有银行与电子钱包）',
+      bankTitle: '银行转账',
+      ewalletTitle: '电子钱包',
+      accountNumber: '收款账号',
+      accountName: '账户姓名',
+      copySuccess: '已复制！',
+      copyBtn: '复制',
+      confirmWaBtn: '发送转账凭证至客服 WhatsApp',
+      securityNotice: '交易安全，由 Garut Journey 官方管理员直接审核核验。',
+    },
+    contact: {
+      eyebrow: '12 — 联系我们',
+      title: '随时与我们的专业向导沟通',
+      intro: '无论定制私人行程、企业团建还是咨询景点信息，我们都很高兴为您解答。',
+      whatsappBtn: 'WhatsApp 在线咨询',
+      emailBtn: '发送电子邮件',
+      phoneBtn: '电话咨询',
+      addressTitle: '办事处地址',
+      openingHoursTitle: '服务时间',
+      openingHours: '周一至周日：08:00 - 21:00 (WIB)',
+    },
+    footer: {
+      tagline: '探索加鲁特，感受精彩故事。西爪哇官方旅游向导与度假预订服务。',
+      quickLinks: '快捷链接',
+      contactUs: '联系我们',
+      officeAddress: '办事处地址',
+      copyright: '版权所有。',
+      officialPortal: 'Garut Journey 官方旅游门户',
+      adminPortal: 'WP-Admin 后台登录',
+      mapsBtn: '在 Google 地图中打开',
+    },
+    detail: {
+      allDestinations: '所有景点',
+      backToDestinations: '返回景点列表',
+      saveToItinerary: '收藏至行程',
+      savedInItinerary: '已收藏至行程',
+      openingHours: '开放时间',
+      ticketPrice: '门票价格',
+      bestTime: '最佳游览时间',
+      facilities: '配套设施',
+      overview: '景点概览',
+      whyVisit: '为什么值得一游？',
+      highlights: '核心亮点',
+      activities: '推荐游玩活动',
+      travelTips: '旅行贴士',
+      locationOnMap: '地图位置与导航',
+      openGoogleMaps: '打开 Google 地图导航',
+      nearbyDestinations: '可顺道游览的周边景点',
+      consultPackage: '咨询包含此景点的旅游套餐',
+      notFoundTitle: '未找到相关景点',
+      notFoundDesc: '该景点页面尚不可用或已被移除。',
+      backHome: '返回首页',
+      share: '分享',
+    },
+  },
 }
 
 const LANG_KEY = 'garut_journey_lang_v1'
@@ -849,7 +1072,7 @@ export function getCurrentLanguage(): LanguageCode {
   if (typeof window === 'undefined') return 'id'
   try {
     const saved = localStorage.getItem(LANG_KEY) as LanguageCode
-    if (saved && (saved === 'id' || saved === 'en' || saved === 'ja' || saved === 'ar')) {
+    if (saved && (saved === 'id' || saved === 'en' || saved === 'zh' || saved === 'ja' || saved === 'ar')) {
       return saved
     }
   } catch {}
@@ -858,7 +1081,7 @@ export function getCurrentLanguage(): LanguageCode {
     const raw = localStorage.getItem('garut_journey_site_settings_v1')
     if (raw) {
       const parsed = JSON.parse(raw)
-      if (parsed.siteLanguage && ['id', 'en', 'ja', 'ar'].includes(parsed.siteLanguage)) {
+      if (parsed.siteLanguage && ['id', 'en', 'zh', 'ja', 'ar'].includes(parsed.siteLanguage)) {
         return parsed.siteLanguage
       }
     }
