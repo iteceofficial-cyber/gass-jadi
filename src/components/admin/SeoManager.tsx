@@ -21,6 +21,8 @@ import {
   type SeoSettings,
 } from '@/lib/seoSettings'
 import { Img } from '@/components/Img'
+import { useArticles } from '@/lib/articlesStorage'
+import { ArticleSeoChecker } from '@/components/admin/ArticleSeoChecker'
 
 const AVAILABLE_OG_IMAGES = [
   { file: 'hero.png', label: 'Panorama Garut (Default Hero)' },
@@ -45,6 +47,9 @@ export function SeoManager({ onNotify }: SeoManagerProps) {
   const [previewTab, setPreviewTab] = useState<'google' | 'social'>('google')
   const [useCustomOg, setUseCustomOg] = useState(false)
   const [customOgUrl, setCustomOgUrl] = useState('')
+  const { articles } = useArticles()
+  const [activeSubTab, setActiveSubTab] = useState<'site' | 'articles'>('site')
+  const [selectedAuditArticle, setSelectedAuditArticle] = useState<any>(null)
 
   useEffect(() => {
     setForm(seo)
@@ -180,6 +185,151 @@ export function SeoManager({ onNotify }: SeoManagerProps) {
         </div>
       </div>
 
+      {/* Sub-tab Navigation */}
+      <div className="flex items-center gap-2 border-b border-ink/10 pb-3">
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('site')}
+          className={`rounded-full px-4 py-2 text-xs font-bold transition flex items-center gap-1.5 ${
+            activeSubTab === 'site'
+              ? 'bg-forest text-white shadow-soft'
+              : 'bg-white text-ink/70 hover:bg-cream-200'
+          }`}
+        >
+          <Globe2 className="h-3.5 w-3.5" />
+          <span>SEO Global Website</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('articles')}
+          className={`rounded-full px-4 py-2 text-xs font-bold transition flex items-center gap-1.5 ${
+            activeSubTab === 'articles'
+              ? 'bg-forest text-white shadow-soft'
+              : 'bg-white text-ink/70 hover:bg-cream-200'
+          }`}
+        >
+          <Sparkles className="h-3.5 w-3.5 text-ember" />
+          <span>Audit &amp; Cek SEO Artikel ({articles.length} Artikel)</span>
+        </button>
+      </div>
+
+      {activeSubTab === 'articles' ? (
+        <div className="space-y-6">
+          <div className="rounded-3xl bg-white p-6 shadow-soft border border-ink/5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-ink/10 pb-4">
+              <div>
+                <h3 className="font-display text-lg font-bold text-forest">
+                  Daftar Evaluasi SEO Seluruh Artikel Panduan
+                </h3>
+                <p className="text-xs text-ink/60">
+                  Periksa kelayakan kata kunci, panjang meta description, dan kesehatan Google Snippet untuk setiap artikel.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 space-y-3">
+              {articles.map((art) => {
+                const totalWords =
+                  (art.body || []).reduce((acc: number, s: { heading: string; text: string }) => acc + (s.text ? s.text.split(/\s+/).length : 0), 0) +
+                  (art.excerpt ? art.excerpt.split(/\s+/).length : 0)
+                const titleLen = art.title.length
+                const excerptLen = art.excerpt.length
+                const isOptimal = titleLen >= 35 && titleLen <= 70 && excerptLen >= 90 && totalWords >= 250
+
+                return (
+                  <div
+                    key={art.slug}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl bg-cream/40 p-4 border border-ink/5 hover:bg-cream/70 transition"
+                  >
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <div className="h-12 w-16 rounded-xl overflow-hidden bg-ink/10 shrink-0">
+                        <Img file={art.image} alt="" className="h-full w-full object-cover" width={100} />
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="font-display text-sm font-bold text-ink truncate">{art.title}</h4>
+                        <div className="flex flex-wrap items-center gap-2 text-[0.7rem] text-ink/60 mt-0.5">
+                          <span className="font-mono text-forest">/guide/{art.slug}</span>
+                          <span>·</span>
+                          <span>{totalWords} kata</span>
+                          <span>·</span>
+                          <span>Title: {titleLen} kar</span>
+                          <span>·</span>
+                          <span>Desc: {excerptLen} kar</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-[0.7rem] font-bold ${
+                          isOptimal
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : 'bg-amber-100 text-amber-800'
+                        }`}
+                      >
+                        {isOptimal ? 'SEO Bagus' : 'Perlu Optimasi'}
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() => setSelectedAuditArticle(art)}
+                        className="rounded-xl bg-forest px-3 py-1.5 text-xs font-bold text-white hover:bg-forest-700 transition flex items-center gap-1"
+                      >
+                        <Sparkles className="h-3 w-3" />
+                        <span>Audit Detail</span>
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Audit Detail Modal */}
+          {selectedAuditArticle && (
+            <div
+              role="dialog"
+              aria-modal="true"
+              className="fixed inset-0 z-50 flex items-center justify-center bg-ink/80 backdrop-blur-sm p-4 overflow-y-auto"
+              onClick={() => setSelectedAuditArticle(null)}
+            >
+              <div
+                className="relative w-full max-w-2xl rounded-3xl bg-white p-6 sm:p-8 shadow-2xl text-ink border border-ink/10 space-y-4 max-h-[90vh] overflow-y-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between border-b border-ink/10 pb-4">
+                  <div>
+                    <span className="text-[0.7rem] font-bold uppercase tracking-wider text-ember">
+                      Laporan Audit SEO
+                    </span>
+                    <h3 className="font-display text-lg font-bold text-ink truncate max-w-md">
+                      {selectedAuditArticle.title}
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedAuditArticle(null)}
+                    className="rounded-full p-2 text-ink/40 hover:bg-ink/5 hover:text-ink"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <ArticleSeoChecker
+                  title={selectedAuditArticle.title}
+                  slug={selectedAuditArticle.slug}
+                  excerpt={selectedAuditArticle.excerpt}
+                  content={(selectedAuditArticle.body || []).map((s: { heading: string; text: string }) => s.heading + ' ' + s.text).join(' ')}
+                  image={selectedAuditArticle.image}
+                  category={selectedAuditArticle.category}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+      <>
       {/* Grid: Preview & Checklist */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Live SERP & Social Previews */}
@@ -631,6 +781,8 @@ export function SeoManager({ onNotify }: SeoManagerProps) {
           </button>
         </div>
       </form>
+      </>
+      )}
     </div>
   )
 }

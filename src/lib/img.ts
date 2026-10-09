@@ -1,27 +1,44 @@
+export const DEFAULT_FALLBACK_IMAGE = '/img/hero.png'
+
+/** Inline SVG placeholder in case no image can be loaded */
+export const SVG_FALLBACK_PLACEHOLDER =
+  'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600" fill="%231F5D42"><rect width="800" height="600" fill="%2317231D"/><path d="M120 480L340 260L460 380L580 220L720 480Z" fill="%231F5D42" opacity="0.6"/><circle cx="280" cy="180" r="40" fill="%23D8893B"/><text x="400" y="520" font-family="sans-serif" font-size="20" fill="%23F5EFE3" opacity="0.7" text-anchor="middle">Garut Journey</text></svg>'
+
 /**
- * Serve images from /img directory, external URLs, or uploaded data URLs.
+ * Serve images from /img directory, external URLs, or uploaded data URLs safely.
  */
-export function img(file: string, _width = 1200) {
-  if (!file) return '/img/hero.png'
-  if (
-    file.startsWith('http://') ||
-    file.startsWith('https://') ||
-    file.startsWith('//') ||
-    file.startsWith('data:') ||
-    file.startsWith('blob:')
-  ) {
-    return file
+export function img(file?: string | null, _width = 1200) {
+  if (!file || typeof file !== 'string' || !file.trim()) {
+    return DEFAULT_FALLBACK_IMAGE
   }
-  return file.startsWith('/') ? file : `/img/${file}`
+  const trimmed = file.trim()
+  if (
+    trimmed.startsWith('http://') ||
+    trimmed.startsWith('https://') ||
+    trimmed.startsWith('//') ||
+    trimmed.startsWith('data:') ||
+    trimmed.startsWith('blob:')
+  ) {
+    return trimmed
+  }
+  return trimmed.startsWith('/') ? trimmed : `/img/${trimmed}`
 }
 
-/** A responsive srcSet for the given widths (omitted for data/blob URLs). */
-export function srcSet(file: string, widths: number[] = [480, 800, 1200, 1800]): string | undefined {
+/**
+ * A responsive srcSet for images.
+ * Only generates distinct widths if the URL is an Unsplash image that supports `&w=`.
+ * For local static images, returns undefined to avoid browser resolution-density distortion.
+ */
+export function srcSet(file?: string | null, widths: number[] = [480, 800, 1200]): string | undefined {
   if (!file || file.startsWith('data:') || file.startsWith('blob:')) {
     return undefined
   }
-  const url = img(file)
-  return widths.map((w) => `${url} ${w}w`).join(', ')
+  if (file.includes('images.unsplash.com')) {
+    const cleanUrl = file.split('?')[0]
+    return widths.map((w) => `${cleanUrl}?auto=format&fit=crop&w=${w}&q=80 ${w}w`).join(', ')
+  }
+  // Return undefined for static local images without CDN resizer to ensure crisp 1:1 rendering
+  return undefined
 }
 
 /**

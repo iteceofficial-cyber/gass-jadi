@@ -72,6 +72,17 @@ export interface SiteSettings {
   defaultLanguage: LanguageCode
   headerAnimation: HeaderAnimationType
   footerAnimation: FooterAnimationType
+  // WhatsApp Chat Settings
+  whatsappCsName?: string
+  whatsappCsRole?: string
+  whatsappCsAvatar?: string
+  whatsappWorkingHours?: string
+  whatsappGreeting?: string
+  whatsappDefaultMessage?: string
+  whatsappQuickReplies?: string[]
+  whatsappShowFab?: boolean
+  whatsappFabPosition?: 'right' | 'left'
+  whatsappPulseEffect?: boolean
 }
 
 export const initialSiteSettings: SiteSettings = {
@@ -122,6 +133,22 @@ export const initialSiteSettings: SiteSettings = {
   footerTagline: 'Swiss van Java — Portal pariwisata, destinasi eksotis, panduan kuliner, dan pemesanan city tour resmi Garut.',
   headerAnimation: 'subtle-glow',
   footerAnimation: 'floating-particles',
+  // WhatsApp defaults
+  whatsappCsName: 'Kang Fahmi',
+  whatsappCsRole: 'Senior Tour Specialist Garut',
+  whatsappCsAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+  whatsappWorkingHours: '07:30 - 21:00 WIB (Online)',
+  whatsappGreeting: 'Sampurasun! Ada yang bisa kami bantu seputar destinasi atau custom tour di Garut?',
+  whatsappDefaultMessage: 'Halo Garut Journey! Saya ingin konsultasi jadwal dan pilihan paket wisata Garut.',
+  whatsappQuickReplies: [
+    'Tanya Rekomendasi Tour 1 Hari',
+    'Custom Trip > 3 Hari 2 Malam',
+    'Cek Tanggal & Ketersediaan Guide',
+    'Konfirmasi Pembayaran / Kwitansi',
+  ],
+  whatsappShowFab: true,
+  whatsappFabPosition: 'right',
+  whatsappPulseEffect: true,
 }
 
 export function getStoredSiteSettings(): SiteSettings {

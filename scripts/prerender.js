@@ -39,6 +39,7 @@ async function prerender() {
     '/guide/menelusuri-keindahan-alam-garut',
     '/guide/surga-kuliner-otentik-garut',
     '/guide/perfect-1-day-garut-itinerary',
+    '/kwitansi/GJ-2610-8451',
   ]
 
   let successCount = 0

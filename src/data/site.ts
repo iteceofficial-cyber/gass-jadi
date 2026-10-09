@@ -42,6 +42,8 @@ export const navLinks: Array<{ label: string; hash?: string; to?: string }> = [
   { label: 'City Tours', hash: 'city-tours' },
   { label: 'Culinary', hash: 'culinary' },
   { label: 'Itinerary', hash: 'itinerary' },
+  { label: 'Team Guide', hash: 'team' },
+  { label: 'Tentang Kami', hash: 'company-profile' },
   { label: 'Gallery', hash: 'gallery' },
   { label: 'Reviews', hash: 'testimonials' },
   { label: 'Travel Guide', hash: 'guide' },

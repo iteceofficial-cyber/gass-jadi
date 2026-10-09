@@ -4,7 +4,7 @@
  */
 import { getDestination } from './destinations'
 
-export type Duration = 1 | 2 | 3
+export type Duration = 1 | 2 | 3 | 4 | 5 | 7
 export type Style = 'Family' | 'Couple' | 'Adventure' | 'Culinary' | 'Relaxation' | 'Culture'
 export type Budget = 'Budget' | 'Standard' | 'Premium'
 
@@ -31,32 +31,56 @@ const routes: Record<Style, string[][]> = {
   Family: [
     ['garut-city-square', 'situ-bagendit', 'cipanas-garut'],
     ['candi-cangkuang', 'kampung-sampireun'],
+    ['darajat-pass', 'garut-city-square'],
     ['santolo-beach'],
+    ['candi-cangkuang', 'situ-bagendit'],
+    ['kampung-sampireun', 'cipanas-garut'],
+    ['garut-city-square', 'darajat-pass'],
   ],
   Couple: [
     ['candi-cangkuang', 'garut-city-square', 'cipanas-garut'],
     ['kampung-sampireun', 'darajat-pass'],
     ['rancabuaya-beach'],
+    ['santolo-beach'],
+    ['situ-bagendit', 'kampung-sampireun'],
+    ['candi-cangkuang', 'cipanas-garut'],
+    ['garut-city-square', 'darajat-pass'],
   ],
   Adventure: [
     ['mount-papandayan', 'darajat-pass', 'cipanas-garut'],
     ['santolo-beach', 'rancabuaya-beach'],
-    ['candi-cangkuang', 'garut-city-square'],
+    ['mount-papandayan', 'garut-city-square'],
+    ['rancabuaya-beach', 'santolo-beach'],
+    ['darajat-pass', 'mount-papandayan'],
+    ['candi-cangkuang', 'situ-bagendit'],
+    ['garut-city-square', 'cipanas-garut'],
   ],
   Culinary: [
     ['garut-city-square', 'candi-cangkuang', 'cipanas-garut'],
     ['situ-bagendit', 'kampung-sampireun'],
+    ['garut-city-square', 'darajat-pass'],
     ['santolo-beach'],
+    ['candi-cangkuang', 'situ-bagendit'],
+    ['kampung-sampireun', 'cipanas-garut'],
+    ['garut-city-square', 'santolo-beach'],
   ],
   Relaxation: [
     ['situ-bagendit', 'cipanas-garut'],
     ['kampung-sampireun', 'darajat-pass'],
-    ['garut-city-square'],
+    ['garut-city-square', 'cipanas-garut'],
+    ['candi-cangkuang', 'kampung-sampireun'],
+    ['darajat-pass', 'situ-bagendit'],
+    ['santolo-beach'],
+    ['garut-city-square', 'cipanas-garut'],
   ],
   Culture: [
     ['candi-cangkuang', 'garut-city-square', 'situ-bagendit'],
     ['kampung-sampireun', 'cipanas-garut'],
-    ['mount-papandayan'],
+    ['mount-papandayan', 'garut-city-square'],
+    ['candi-cangkuang', 'situ-bagendit'],
+    ['darajat-pass', 'kampung-sampireun'],
+    ['santolo-beach'],
+    ['garut-city-square', 'candi-cangkuang'],
   ],
 }
 
@@ -83,15 +107,15 @@ export function buildItinerary(duration: Duration, style: Style, budget: Budget,
   const foods = foodByStyle[style]
   return days.map((slugs, i) => {
     const stops: Stop[] = slugs.map((slug, j) => {
-      const d = getDestination(slug)!
+      const d = getDestination(slug)
       return {
         time: timeSlots[j] ?? '16:00',
-        destination: d.name,
+        destination: d ? d.name : slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
         slug,
-        activity: d.activities.slice(0, 2).join(' · '),
+        activity: d?.activities ? d.activities.slice(0, 2).join(' · ') : 'Eksplorasi destinasi & foto',
         duration: durations[j] ?? '1–2 hrs',
         food: foods[(i + j) % foods.length],
-        note: d.travelTips[0],
+        note: d?.travelTips?.[0] ?? 'Kenakan pakaian nyaman untuk cuaca pegunungan.',
       }
     })
     stops.push({
@@ -105,9 +129,18 @@ export function buildItinerary(duration: Duration, style: Style, budget: Budget,
           ? 'Large group — we arrange group-friendly transport and seating.'
           : budgetNote[budget],
     })
+    const dayTitles = [
+      'Arrive & discover',
+      'Highland wonders & crater',
+      'Heritage & soothing springs',
+      'South coast ocean exploration',
+      'Artisanal leather & culinary trail',
+      'Geothermal tea estate immersion',
+      'Grand farewell to Garut',
+    ]
     return {
       day: i + 1,
-      title: i === 0 ? 'Arrive & discover' : i === 1 ? 'Go deeper' : 'One last horizon',
+      title: dayTitles[i] || `Day ${i + 1} Adventure`,
       stops,
     }
   })

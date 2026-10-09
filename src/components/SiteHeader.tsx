@@ -20,6 +20,10 @@ function getTranslatedLabel(label: string, t: any): string {
       return t.nav.culinary
     case 'itinerary':
       return t.nav.itinerary
+    case 'team guide':
+      return 'Tim & Guide'
+    case 'tentang kami':
+      return 'Tentang Kami'
     case 'gallery':
       return t.nav.gallery
     case 'reviews':

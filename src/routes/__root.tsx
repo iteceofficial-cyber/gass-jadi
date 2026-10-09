@@ -77,11 +77,13 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     typeof window !== 'undefined' &&
     (window.location.pathname.startsWith('/admin') ||
       window.location.pathname.startsWith('/wp-admin') ||
-      window.location.pathname.startsWith('/login'))
+      window.location.pathname.startsWith('/login') ||
+      window.location.pathname.startsWith('/kwitansi'))
   const isAdminPage =
     pathname.startsWith('/admin') ||
     pathname.startsWith('/wp-admin') ||
     pathname.startsWith('/login') ||
+    pathname.startsWith('/kwitansi') ||
     Boolean(isBrowserAdmin)
   const { lang, isRtl } = useLanguage()
 

@@ -103,7 +103,13 @@ Saya sudah melakukan pembayaran untuk pemesanan tour:
 Berikut saya kirimkan bukti transfer pembayaran. Mohon segera diverifikasi dan dicatat di dashboard. Terima kasih!`
 
     const waUrl = whatsappLink(message)
-    window.open(waUrl, '_blank')
+    const link = document.createElement('a')
+    link.href = waUrl
+    link.target = '_blank'
+    link.rel = 'noopener noreferrer'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }
 
   return (

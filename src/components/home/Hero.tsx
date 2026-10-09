@@ -148,7 +148,6 @@ export function Hero() {
   const { settings } = useSiteSettings()
 
   const bgImage = settings.heroBackground || 'hero.png'
-  const isCustomUrl = bgImage.startsWith('http://') || bgImage.startsWith('https://')
 
   // Dynamic darkness overlay chosen by admin
   const overlayClass =
@@ -168,21 +167,14 @@ export function Hero() {
           settings.heroZoomEffect ? 'scale-105 transition-transform duration-[12000ms] ease-out' : ''
         }`}
       >
-        {isCustomUrl ? (
-          <img
-            src={bgImage}
-            alt="Hero Background"
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <Img
-            file={bgImage}
-            alt="Sunrise over the volcanoes and rice terraces of Garut"
-            sizes="100vw"
-            eager
-            className="h-full w-full object-cover"
-          />
-        )}
+        <Img
+          file={bgImage}
+          alt="Sunrise over the volcanoes and rice terraces of Garut"
+          sizes="100vw"
+          eager
+          fallback="hero.png"
+          className="h-full w-full object-cover"
+        />
       </div>
 
       {/* Atmospheric Overlays */}

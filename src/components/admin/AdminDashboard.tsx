@@ -30,6 +30,7 @@ import {
   Radio,
   RotateCcw,
   Search,
+  Send,
   Settings,
   ShieldCheck,
   ShoppingBag,
@@ -55,6 +56,8 @@ import { ToursManager } from '@/components/admin/ToursManager'
 import { ReviewsManager } from '@/components/admin/ReviewsManager'
 import { SectionsManager } from '@/components/admin/SectionsManager'
 import { SeoManager } from '@/components/admin/SeoManager'
+import { ArticleSeoChecker } from '@/components/admin/ArticleSeoChecker'
+import { WhatsAppManager } from '@/components/admin/WhatsAppManager'
 import { type Article, formatDate } from '@/data/articles'
 import { type Category, type Destination } from '@/data/destinations'
 import { useArticles } from '@/lib/articlesStorage'
@@ -185,11 +188,14 @@ export function AdminDashboard() {
     | 'all_sections'
     | 'settings'
     | 'seo'
+    | 'whatsapp_settings'
     | 'pricing_destinations'
     | 'payments'
     | 'list'
     | 'editor'
   >('bookings')
+
+  const [seoAuditArticle, setSeoAuditArticle] = useState<Article | null>(null)
 
   const [search, setSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('All')
@@ -841,7 +847,38 @@ Kami dari Admin Garut Journey ingin mengonfirmasi jadwal pemesanan tour dengan K
 
 Tim kami siap menyambut kedatangan Anda di Garut! Ada hal yang ingin dipersiapkan sebelumnya? Terima kasih!`
 
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, '_blank')
+    const waLink = document.createElement('a')
+    waLink.href = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`
+    waLink.target = '_blank'
+    waLink.rel = 'noopener noreferrer'
+    document.body.appendChild(waLink)
+    waLink.click()
+    document.body.removeChild(waLink)
+  }
+
+  // Send official Kwitansi PDF download link to client via WhatsApp
+  const sendKwitansiViaWhatsApp = (b: Booking) => {
+    const rawNumber = b.whatsapp.replace(/\D/g, '')
+    const phone = rawNumber.startsWith('0') ? '62' + rawNumber.slice(1) : rawNumber
+    const kwitansiUrl = `${window.location.origin}/kwitansi/${b.id}`
+    const text = `Halo Kak ${b.fullName}, terima kasih! Pembayaran Anda sebesar ${formatRupiah(b.totalPrice)} untuk paket "${b.packageOrTour}" telah kami konfirmasi LUNAS.
+
+Silakan unduh atau cetak file Kwitansi Resmi Bukti Pembayaran Lunas (PDF) Anda melalui tautan resmi Garut Journey berikut:
+${kwitansiUrl}
+
+Kwitansi ini dapat Anda simpan atau unduh langsung sebagai file PDF tanpa perlu login. Simpan untuk ditunjukkan kepada tour guide / driver kami saat di meeting point. Sampai jumpa di Garut!
+
+Salam hangat,
+Tim Garut Journey`
+
+    const waLink = document.createElement('a')
+    waLink.href = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`
+    waLink.target = '_blank'
+    waLink.rel = 'noopener noreferrer'
+    document.body.appendChild(waLink)
+    waLink.click()
+    document.body.removeChild(waLink)
+    notifySuccess(`Link kwitansi resmi ${b.id} dikirim via WhatsApp!`)
   }
 
   // ==========================================
@@ -1082,6 +1119,17 @@ Tim kami siap menyambut kedatangan Anda di Garut! Ada hal yang ingin dipersiapka
 
             <button
               type="button"
+              onClick={() => setActiveTab('whatsapp_settings')}
+              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition flex items-center gap-1.5 shrink-0 ${
+                activeTab === 'whatsapp_settings' ? 'bg-[#25D366] text-white shadow-soft' : 'bg-ink/5 text-ink/75 hover:bg-ink/10'
+              }`}
+            >
+              <MessageCircle className="h-3.5 w-3.5 text-emerald-500" />
+              <span>Chat WhatsApp</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => setActiveTab('pricing_destinations')}
               className={`rounded-full px-3 py-1.5 text-xs font-semibold transition flex items-center gap-1.5 shrink-0 ${
                 activeTab === 'pricing_destinations' ? 'bg-forest text-white' : 'bg-ink/5 text-ink/75 hover:bg-ink/10'
@@ -1178,6 +1226,8 @@ Tim kami siap menyambut kedatangan Anda di Garut! Ada hal yang ingin dipersiapka
                   ? 'Pengaturan & Edit Seluruh Bagian Website'
                   : activeTab === 'seo'
                   ? 'Optimasi SEO & Peringkat Google Mesin Pencari'
+                  : activeTab === 'whatsapp_settings'
+                  ? 'Pengaturan Chat WhatsApp & Widget CS'
                   : activeTab === 'payments'
                   ? 'Pengaturan Rekening Bank, E-Wallet & QRIS'
                   : activeTab === 'pricing_destinations'
@@ -1442,6 +1492,28 @@ Tim kami siap menyambut kedatangan Anda di Garut! Ada hal yang ingin dipersiapka
                         >
                           <MessageCircle className="h-3.5 w-3.5" />
                           <span>Chat WA</span>
+                        </button>
+
+                        {/* Kwitansi PDF Direct Link & Send */}
+                        <a
+                          href={`/kwitansi/${b.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 rounded-xl bg-forest/10 px-2.5 py-1.5 text-xs font-bold text-forest hover:bg-forest hover:text-white transition"
+                          title="Buka & Unduh Kwitansi PDF resmi client (tanpa login)"
+                        >
+                          <FileText className="h-3.5 w-3.5" />
+                          <span>Kwitansi PDF</span>
+                        </a>
+
+                        <button
+                          type="button"
+                          onClick={() => sendKwitansiViaWhatsApp(b)}
+                          className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 transition shadow-sm"
+                          title="Kirim link download kwitansi resmi PDF ke WhatsApp client"
+                        >
+                          <Send className="h-3.5 w-3.5" />
+                          <span>Kirim Kwitansi</span>
                         </button>
 
                         {/* Detail Modal Trigger */}
@@ -2712,6 +2784,15 @@ Tim kami siap menyambut kedatangan Anda di Garut! Ada hal yang ingin dipersiapka
                       <div className="flex items-center gap-1.5">
                         <button
                           type="button"
+                          onClick={() => setSeoAuditArticle(art)}
+                          className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 text-emerald-700 px-2.5 py-1.5 text-xs font-bold border border-emerald-200 hover:bg-emerald-600 hover:text-white transition"
+                          title="Cek skor SEO artikel ini"
+                        >
+                          <Sparkles className="h-3.5 w-3.5" />
+                          <span>Cek SEO</span>
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => startEditArticle(art)}
                           className="inline-flex items-center gap-1 rounded-lg bg-ink/5 px-2.5 py-1.5 text-xs font-semibold text-ink/80 hover:bg-forest hover:text-white transition"
                           title="Edit artikel"
@@ -2731,6 +2812,48 @@ Tim kami siap menyambut kedatangan Anda di Garut! Ada hal yang ingin dipersiapka
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* Modal Cek SEO Artikel */}
+            {seoAuditArticle && (
+              <div
+                role="dialog"
+                aria-modal="true"
+                className="fixed inset-0 z-50 flex items-center justify-center bg-ink/80 backdrop-blur-sm p-4 overflow-y-auto"
+                onClick={() => setSeoAuditArticle(null)}
+              >
+                <div
+                  className="relative w-full max-w-2xl rounded-3xl bg-white p-6 sm:p-8 shadow-2xl text-ink border border-ink/10 space-y-4 max-h-[90vh] overflow-y-auto"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between border-b border-ink/10 pb-4">
+                    <div>
+                      <span className="text-[0.7rem] font-bold uppercase tracking-wider text-ember">
+                        Laporan Audit SEO Artikel
+                      </span>
+                      <h3 className="font-display text-lg font-bold text-ink truncate max-w-md">
+                        {seoAuditArticle.title}
+                      </h3>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSeoAuditArticle(null)}
+                      className="rounded-full p-2 text-ink/40 hover:bg-ink/5 hover:text-ink"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <ArticleSeoChecker
+                    title={seoAuditArticle.title}
+                    slug={seoAuditArticle.slug}
+                    excerpt={seoAuditArticle.excerpt}
+                    content={(seoAuditArticle.body || []).map((s) => s.heading + ' ' + s.text).join(' ')}
+                    image={seoAuditArticle.image}
+                    category={seoAuditArticle.category}
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -4038,6 +4161,15 @@ Tim kami siap menyambut kedatangan Anda di Garut! Ada hal yang ingin dipersiapka
           </div>
         )}
 
+        {/* ======================================= */}
+        {/* TAB: PENGATURAN CHAT WHATSAPP          */}
+        {/* ======================================= */}
+        {activeTab === 'whatsapp_settings' && (
+          <div className="max-w-5xl mx-auto animate-fade-in">
+            <WhatsAppManager onNotify={notifySuccess} />
+          </div>
+        )}
+
         {/* Modal Detail Booking Popup */}
         {selectedBookingDetail && (
           <div
@@ -4149,19 +4281,38 @@ Tim kami siap menyambut kedatangan Anda di Garut! Ada hal yang ingin dipersiapka
               </div>
 
               <div className="pt-2 flex flex-col sm:flex-row gap-2">
+                <a
+                  href={`/kwitansi/${selectedBookingDetail.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-forest py-2.5 px-3.5 text-xs font-bold text-white hover:bg-forest-700 transition"
+                >
+                  <FileText className="h-4 w-4" />
+                  <span>Buka Kwitansi PDF</span>
+                </a>
+
+                <button
+                  type="button"
+                  onClick={() => sendKwitansiViaWhatsApp(selectedBookingDetail)}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 py-2.5 px-3.5 text-xs font-bold text-white hover:bg-emerald-700 transition"
+                >
+                  <Send className="h-4 w-4" />
+                  <span>Kirim Kwitansi WA</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={() => openCustomerWhatsApp(selectedBookingDetail)}
                   className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-[#25D366] py-2.5 text-xs font-bold text-white hover:bg-[#1ebd59] transition"
                 >
                   <MessageCircle className="h-4 w-4" />
-                  <span>Chat Pelanggan di WhatsApp</span>
+                  <span>Chat WhatsApp</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setSelectedBookingDetail(null)}
-                  className="rounded-xl border border-ink/20 px-4 py-2.5 text-xs font-semibold text-ink/75 hover:bg-ink/5 transition"
+                  className="rounded-xl border border-ink/20 px-3.5 py-2.5 text-xs font-semibold text-ink/75 hover:bg-ink/5 transition"
                 >
                   Tutup
                 </button>
